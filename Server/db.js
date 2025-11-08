@@ -1,12 +1,14 @@
 // db.js
-const sql = require('mssql');
+const sql = require('mssql/msnodesqlv8');
 
 const config = {
     driver: 'msnodesqlv8',
-    server: 'LAPTOP-DANOATIV\\SQLEXPRESS',
+    server: 'localhost\\SQLEXPRESS',
+    port: 1433,
     database: 'ParkingBookingSystem',
     options: {
-        trustedConnection: true
+        trustServerCertificate: true,
+        trustedConnection: true,
     }
 };
 
@@ -18,5 +20,6 @@ async function connectDB(){
         console.error('❌ DB Connection Error:', err);
     }
 }
+const pool = new sql.ConnectionPool(config).connect();
 
-module.exports = { connectDB, sql };
+module.exports = { connectDB, sql, pool };
