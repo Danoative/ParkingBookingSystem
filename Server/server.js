@@ -1,23 +1,37 @@
 // server.js
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { sql, pool } = require('./db'); // Use your db.js from previous step
+const { sql, pool } = require('./db'); //get db.js
 
 const app = express();
 app.use(express.json());
 
-app.post('/api/register', async (req, res) => {
+// User Register System here
+
+//  User Loggi System here
+
+// Admin Register System
+
+// Admin Login System
+
+// Booking System
+
+// Parking Lot System
+
+// This is to test the database if it's connected to MSSQL Server Express
+app.get('/api/test-db', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const poolConn = await pool;
-    await poolConn.request()
-      .input('username', sql.NVarChar, username)
-      .input('password', sql.NVarChar, hashedPassword)
-      .query('INSERT INTO Users (username, password) VALUES (@username, @password)');
-    res.json({ message: 'User registered successfully!' });
+    const poolConn = await pool; // from your db.js
+    const result = await poolConn.request().query('SELECT TOP 1 * FROM Admins');
+    res.json({
+      connected: true,
+      row: result.recordset[0] || null
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      connected: false,
+      error: err.message
+    });
   }
 });
 
