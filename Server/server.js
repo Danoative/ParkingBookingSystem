@@ -22,7 +22,7 @@ app.use(express.json());
 app.get('/api/test-db', async (req, res) => {
   try {
     const poolConn = await pool; // from your db.js
-    const result = await poolConn.request().query('SELECT TOP 1 * FROM Admins');
+    const result = await poolConn.request().query('SELECT TOP 1 * FROM Admins'); // Change admins to what table in the database's table 
     res.json({
       connected: true,
       row: result.recordset[0] || null
