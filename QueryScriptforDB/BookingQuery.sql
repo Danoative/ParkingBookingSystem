@@ -1,10 +1,15 @@
-create table Booking(
-	BookingID int identity(1,1) primary key,
-	UserID int foreign key references Users(UserID),
-	AreaID int foreign key references ParkingAreas(AreaID),
-	SlotNumber int,
-	StartTime DATETIME not null,
-	EndTIme DATETIME not null,
-	Status nvarchar(50) DEFAULT 'PENDING',
-	CreateAt DateTime Default getdate()
+CREATE TABLE Booking (
+    BookingID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    AreaID INT FOREIGN KEY REFERENCES ParkingAreas(AreaID),
+    SlotNumber INT,
+    FirstName NVARCHAR(100) NOT NULL,
+    LastName NVARCHAR(100) NOT NULL,
+    Email NVARCHAR(255) NOT NULL,
+    Phone NVARCHAR(50) NOT NULL,
+    UserAddress NVARCHAR(255) NOT NULL,
+    StartTime DATETIME NOT NULL,
+    EndTime DATETIME NOT NULL,
+    Status NVARCHAR(50) DEFAULT 'PENDING',
+    CreateAt DATETIME DEFAULT GETDATE()
 );

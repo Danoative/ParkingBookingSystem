@@ -7,7 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-	<title>Booking Form HTML Template</title>
+	<title>Booking Parking System</title>
 
 	<!-- Google font -->
 	<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet">
@@ -29,45 +29,56 @@
 
 <body>
 	<div id="booking" class="section">
+		
+		<div class="top-buttons">
+  		<button class="btn btn-primary">Login</button>
+  		<button class="btn btn-secondary">Register</button>
+		</div>
+
 		<div class="section-center">
 			<div class="container">
 				<div class="row">
 					<div class="booking-form">
 						<div class="form-header">
-							<h1>Book a car</h1>
+							<h1>Book a Parking Spot</h1>
 						</div>
 						<form>
 							<div class="row">
 								<div class="col-sm-6">
 									<div class="form-group">
-										<span class="form-label">Name</span>
-										<input class="form-control" type="text" placeholder="Enter your name">
+										<span class="form-label">First Name</span>
+										<input class="form-control" type="first_name" placeholder="Enter your firstname name">
 									</div>
 								</div>
 								<div class="col-sm-6">
 									<div class="form-group">
-										<span class="form-label">Email</span>
-										<input class="form-control" type="email" placeholder="Enter your email">
+										<span class="form-label">Last Name</span>
+										<input class="form-control" type="last_name" placeholder="Enter your last name">
 									</div>
 								</div>
+								
 							</div>
+							<div class="form-group">
+								<span class="form-label">Email</span>
+								<input class="form-control" type="email" placeholder="Enter your email">
+							</div>
+
 							<div class="form-group">
 								<span class="form-label">Phone</span>
-								<input class="form-control" type="tel" placeholder="Enter your phone number">
+								<input class="form-control" type="phoneNum" placeholder="Enter your phone number">
 							</div>
+
 							<div class="form-group">
-								<span class="form-label">Pickup Location</span>
-								<input class="form-control" type="text" placeholder="Enter ZIP/Location">
+								<span class="form-label">Address</span>
+								<input class="form-control" type="addr" placeholder="Enter your address">
 							</div>
-							<div class="form-group">
-								<span class="form-label">Destination</span>
-								<input class="form-control" type="text" placeholder="Enter ZIP/Location">
-							</div>
+
+
 							<div class="row">
 								<div class="col-sm-5">
 									<div class="form-group">
 										<span class="form-label">Pickup Date</span>
-										<input class="form-control" type="date" required>
+										<input class="form-control" type="slot-date" required>
 									</div>
 								</div>
 								<div class="col-sm-7">
@@ -124,6 +135,29 @@
 									</div>
 								</div>
 							</div>
+							
+							<!-- Parking Slot Selection -->
+							<div class="form-group">
+								<span class="form-label">Choose a parking area</span>
+								<select class="form-control" name="parking-slot" required>
+									<option value="1">Slot #1</option>
+									<option value="2">Slot #2</option>
+									<option value="3">Slot #3</option>
+									<option value="4">Slot #4</option>
+									<option value="5">Slot #5</option>
+									<option value="6">Slot #6</option>
+									<option value="7">Slot #7</option>
+									<option value="8">Slot #8</option>
+									<option value="9">Slot #9</option>
+									<option value="10">Slot #10</option>
+									<option value="11">Slot #11</option>
+									<option value="12">Slot #12</option>
+								</select>
+								<span class="select-arrow"></span>
+							</div>
+							
+
+
 							<div class="form-btn">
 								<button class="submit-btn">Book Now</button>
 							</div>
@@ -134,5 +168,36 @@
 		</div>
 	</div>
 </body><!-- This templates was made by Colorlib (https://colorlib.com) -->
+
+<script> 
+document.getElementById('booking-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const data = {
+      firstName: this.elements['first_name'].value.trim(),
+      lastName: this.elements['last_name'].value.trim(),
+      email: this.elements['email'].value.trim(),
+      phone: this.elements['phoneNum'].value.trim(),
+      address: this.elements['addr'].value.trim(),
+      bookingDatetime: this.elements['slot-date'].value,
+      parkingArea: this.elements['parking-slot'].value
+    };
+
+    // Example POST request
+    fetch('/api/booking', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      alert('Booking successful: ' + JSON.stringify(result));
+    })
+    .catch(err => alert('Error: ' + err));
+});
+</script>
+
 
 </html>

@@ -15,7 +15,20 @@ app.use(express.json());
 // Admin Login System
 
 // Booking System
+app.post('/api/booking', async (req, res) => {
+  try {
+    await sql.connect(config);
 
+    // Example: Insert data into ParkingSlot
+    const { AreaID, VehID, SlotLocation, SlotStatus } = req.body;
+    await sql.query`INSERT INTO ParkingSlot (AreaID, VehID, SlotLocation, SlotStatus)
+      VALUES (${AreaID}, ${VehID}, ${SlotLocation}, ${SlotStatus})`;
+
+    res.json({ success: true, message: 'Booking added!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 // Parking Lot System
 
 // This is to test the database if it's connected to MSSQL Server Express

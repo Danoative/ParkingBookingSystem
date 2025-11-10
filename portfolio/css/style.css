@@ -47,7 +47,32 @@
 	color: #ffc001;
 	margin: 0px;
 }
+.top-buttons {
+  display: flex;
+  gap: 10px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
 
+.top-buttons .btn {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+}
+/* Change the Login button color and text */
+.top-buttons .btn-primary {
+  background-color: #2e7d32; /* Button background color (e.g., dark green) */
+  color: #fff;              /* Text color (e.g., white) */
+  border: none;
+}
+
+/* Change the Register button color and text */
+.top-buttons .btn-secondary {
+  background-color: #c62828; /* Button background color (e.g., red) */
+  color: #fff;              /* Text color (e.g., white) */
+  border: none;
+}
 .booking-form>form {
 	background-color: #101113;
 	padding: 30px 20px;
