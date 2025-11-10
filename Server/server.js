@@ -16,17 +16,45 @@ app.use(express.json());
 
 // Booking System
 app.post('/api/booking', async (req, res) => {
+  const {
+    userID,
+    areaID,
+    slotNumber,
+    firstName,
+    lastName,
+    email,
+    phone,
+    userAddress,
+    startTime,
+    endTime
+    // status is usually optional
+  } = req.body;
+
   try {
     await sql.connect(config);
+    const request = new sql.Request();
 
-    // Example: Insert data into ParkingSlot
-    const { AreaID, VehID, SlotLocation, SlotStatus } = req.body;
-    await sql.query`INSERT INTO ParkingSlot (AreaID, VehID, SlotLocation, SlotStatus)
-      VALUES (${AreaID}, ${VehID}, ${SlotLocation}, ${SlotStatus})`;
+    request.input('UserID', sql.Int, userID);
+    request.input('AreaID', sql.Int, areaID);
+    request.input('SlotNumber', sql.Int, slotNumber);
+    request.input('FirstName', sql.NVarChar(100), firstName);
+    request.input('LastName', sql.NVarChar(100), lastName);
+    request.input('Email', sql.NVarChar(255), email);
+    request.input('Phone', sql.NVarChar(50), phone);
+    request.input('UserAddress', sql.NVarChar(255), userAddress);
+    request.input('StartTime', sql.DateTime, startTime);
+    request.input('EndTime', sql.DateTime, endTime);
+    // Don't pass Status or CreatedAt unless you need to override the default
 
-    res.json({ success: true, message: 'Booking added!' });
+    const result = await request.query(`
+      INSERT INTO Booking
+      (UserID, AreaID, SlotNumber, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime)
+      VALUES (@UserID, @AreaID, @SlotNumber, @FirstName, @LastName, @Email, @Phone, @UserAddress, @StartTime, @EndTime)
+    `);
+
+    res.json({ success: true, message: 'Booking successfully created.' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 // Parking Lot System
