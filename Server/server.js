@@ -2,9 +2,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { sql, pool } = require('./db'); //get db.js
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 // User Register System here
 
