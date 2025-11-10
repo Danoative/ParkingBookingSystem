@@ -17,46 +17,43 @@ app.use(express.json());
 // Booking System
 app.post('/api/booking', async (req, res) => {
   const {
-    userID,
-    areaID,
-    slotNumber,
-    firstName,
-    lastName,
-    email,
-    phone,
-    userAddress,
-    startTime,
-    endTime
-    // status is usually optional
+    UserID,
+    AreaID,
+    SlotNumber,
+    FirstName,
+    LastName,
+    Email,
+    Phone,
+    UserAddress,
+    StartTime,
+    EndTime
   } = req.body;
 
   try {
-    await sql.connect(config);
-    const request = new sql.Request();
+    const poolConn = await pool; // assuming pooled connection from './db'
+    await poolConn.request()
+      .input('UserID', sql.Int, UserID)
+      .input('AreaID', sql.Int, AreaID)
+      .input('SlotNumber', sql.Int, SlotNumber)
+      .input('FirstName', sql.NVarChar(100), FirstName)
+      .input('LastName', sql.NVarChar(100), LastName)
+      .input('Email', sql.NVarChar(255), Email)
+      .input('Phone', sql.NVarChar(50), Phone)
+      .input('UserAddress', sql.NVarChar(255), UserAddress)
+      .input('StartTime', sql.DateTime, StartTime)
+      .input('EndTime', sql.DateTime, EndTime)
+      .query(`
+        INSERT INTO Booking
+        (UserID, AreaID, SlotNumber, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime)
+        VALUES (@UserID, @AreaID, @SlotNumber, @FirstName, @LastName, @Email, @Phone, @UserAddress, @StartTime, @EndTime)
+      `);
 
-    request.input('UserID', sql.Int, userID);
-    request.input('AreaID', sql.Int, areaID);
-    request.input('SlotNumber', sql.Int, slotNumber);
-    request.input('first_name', sql.NVarChar(100), firstName);
-    request.input('last_name', sql.NVarChar(100), lastName);
-    request.input('email', sql.NVarChar(255), email);
-    request.input('phoneNum', sql.NVarChar(50), phone);
-    request.input('addr', sql.NVarChar(255), userAddress);
-    request.input('slot-date', sql.DateTime, startTime);
-    request.input('EndTime', sql.DateTime, endTime);
-    // Don't pass Status or CreatedAt unless you need to override the default
-
-    const result = await request.query(`
-      INSERT INTO Booking
-      (UserID, AreaID, SlotNumber, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime)
-      VALUES (@UserID, @AreaID, @SlotNumber, @FirstName, @LastName, @Email, @Phone, @UserAddress, @StartTime, @EndTime)
-    `);
-
-    res.json({ success: true, message: 'Booking successfully created.' });
+    res.json({ success: true, message: "Booking successfully created.", received: req.body });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // Parking Lot System
 
 // This is to test the database if it's connected to MSSQL Server Express

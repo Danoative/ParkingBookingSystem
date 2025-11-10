@@ -179,12 +179,12 @@ document.getElementById('booking-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
     const data = {
-      firstName: this.elements['first_name'].value.trim(),
-      lastName: this.elements['last_name'].value.trim(),
-      email: this.elements['email'].value.trim(),
-      phone: this.elements['phoneNum'].value.trim(),
-      address: this.elements['addr'].value.trim(),
-      bookingDatetime: this.elements['slot-date'].value,
+      FirstName: this.elements['first_name'].value.trim(),
+      LastName: this.elements['last_name'].value.trim(),
+      Email: this.elements['email'].value.trim(),
+      Phone: this.elements['phoneNum'].value.trim(),
+      UserAddress: this.elements['addr'].value.trim(),
+      StartTime: this.elements['slot-date'].value,
       parkingArea: this.elements['parking-slot'].value
     };
 
