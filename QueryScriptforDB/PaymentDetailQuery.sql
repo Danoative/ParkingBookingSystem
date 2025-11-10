@@ -1,7 +1,11 @@
-Create table PaymentDetail(
-	PaymentID int identity(1,1) primary key,
-	BookingID int foreign key references Booking(BookingID),
-	PaymentMethod NVARCHAR(50),
-	PaymentStat NVARCHAR(50) default 'Unpaid',
-	TranscationDate datetime default getdate()
+CREATE TABLE Payment (
+    transacID INT PRIMARY KEY AUTO_INCREMENT,
+    transacTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UserID INT NOT NULL,
+    BookingID INT NOT NULL,
+    TotalCost DECIMAL(12, 0) NOT NULL, -- Price in VND, adjust precision if needed
+    PayStat ENUM('Paid', 'Unpaid') NOT NULL DEFAULT 'Unpaid',
+    PayMethod ENUM('Online Banking', 'Credit Card', 'Pay In Cash') NOT NULL,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    FOREIGN KEY (BookingID) REFERENCES Bookings(BookingID)
 );

@@ -13,6 +13,18 @@
     <link type="text/css" rel="stylesheet" href="css/style.css" />
 </head>
 
+<div class="modal" tabindex="-1" id="paymentModal" style="display:none; position:fixed; 
+top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:30px; border-radius:10px; max-width:400px; margin:auto; text-align:center;">
+    <h4>Select Payment Method</h4>
+    <button id="creditBtn" class="btn btn-secondary" style="margin:10px 0;" disabled>Credit Card (Coming Soon)</button><br>
+    <button id="onlineBtn" class="btn btn-secondary" style="margin:10px 0;" disabled>Online Banking (Coming Soon)</button><br>
+    <button id="cashBtn" class="btn btn-success" style="margin:10px 0;">Pay in Cash</button>
+    <br>
+    <button id="cancelPaymentBtn" class="btn btn-link" style="margin-top:10px;">Cancel</button>
+  </div>
+</div>
+
 <body>
     <div id="booking" class="section">
         <div class="top-buttons">
@@ -27,6 +39,7 @@
                             <h1>Book a Parking Spot</h1>
                         </div>
                         <form id="booking-form">
+                            <!-- Start Date Selection -->
                             <div class="row">
                                 <div class="col-sm-6">
                                     <div class="form-group">
@@ -114,7 +127,78 @@
                                         </div>
                                     </div>
                                 </div>
+                                
                             </div>
+                             <!-- End of Start -->
+
+                            <!-- Start of End Date Selection -->
+                            <div class="row">
+                                <div class="col-sm-5">
+                                    <div class="form-group">
+                                        <span class="form-label">End Date</span>
+                                        <input class="form-control" name="EndTime" type="date" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-7">
+                                    <div class="row">
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">Hour</span>
+                                                <select class="form-control" name="StartHour">
+                                                    <option>1</option>
+                                                    <option>2</option>
+                                                    <option>3</option>
+                                                    <option>4</option>
+                                                    <option>5</option>
+                                                    <option>6</option>
+                                                    <option>7</option>
+                                                    <option>8</option>
+                                                    <option>9</option>
+                                                    <option>10</option>
+                                                    <option>11</option>
+                                                    <option>12</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">Min</span>
+                                                <select class="form-control" name="StartMin">
+                                                    <option>00</option>
+                                                    <option>05</option>
+                                                    <option>10</option>
+                                                    <option>15</option>
+                                                    <option>20</option>
+                                                    <option>25</option>
+                                                    <option>30</option>
+                                                    <option>35</option>
+                                                    <option>40</option>
+                                                    <option>45</option>
+                                                    <option>50</option>
+                                                    <option>55</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">AM/PM</span>
+                                                <select class="form-control" name="StartAmPm">
+                                                    <option>AM</option>
+                                                    <option>PM</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <!-- End of End Date Selection -->
+
+
+
                             <!-- Parking Slot Selection -->
                             <div class="form-group">
                                 <span class="form-label">Choose a parking slot</span>
@@ -137,6 +221,13 @@
                             <div class="form-btn">
                                 <button class="submit-btn" type="submit">Book Now</button>
                             </div>
+                            <!-- Show the total cost -->
+                             <div id="total-cost-container"> 
+                                <span> Total Cost:&nbsp;</span>
+                                <span id="total-cost"> 0 </span>
+                                <span> VND </span>
+                             </div>
+                            <!-- End of total cost -->
                         </form>
                     </div>
                 </div>
@@ -145,28 +236,43 @@
     </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    let formSubmissionData = null;
+
     document.getElementById('booking-form').addEventListener('submit', function(e) {
         e.preventDefault();
 
         // Collect and compose StartTime field as a string: "YYYY-MM-DD HH:MM AM/PM"
         const date = this.elements['StartDate'].value;
+        const endDate = this.elements['EndDate'].value;
         const hour = this.elements['StartHour'].value.padStart(2, '0');
         const min = this.elements['StartMin'].value.padStart(2, '0');
         const ampm = this.elements['StartAmPm'].value;
-        const StartTime = `${date} ${hour}:${min} ${ampm}`;
 
-        const data = {
+        const StartTime = `${date} ${hour}:${min} ${ampm}`;
+        const EndTime = `${endDate} ${hour}:${min} ${ampm}`;
+
+        formSubmissionData = {
             FirstName: this.elements['FirstName'].value.trim(),
             LastName: this.elements['LastName'].value.trim(),
             Email: this.elements['Email'].value.trim(),
             Phone: this.elements['Phone'].value.trim(),
             UserAddress: this.elements['UserAddress'].value.trim(),
             SlotNumber: this.elements['SlotNumber'].value,
-            StartTime: StartTime
+            StartTime: StartTime,
+            EndTime: EndTime
             // Add EndTime, UserID, AreaID if needed and available
         };
 
-        fetch('http://localhost:3000/api/booking', {
+        //Payment Modal shows after submit
+        document.getElementById('paymentModal').style.display = 'flex';
+    });
+
+    // Button handler
+    document.getElementById('cashBtn').onclick = function(){
+        // Modal close
+        document.getElementById('paymentModal').style.display = 'none';
+        // send data form
+            fetch('http://localhost:3000/api/booking', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -178,7 +284,21 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Booking successful: ' + JSON.stringify(result));
         })
         .catch(err => alert('Error: ' + err));
-    });
+    };
+    // Show Credit Button
+    document.getElementById('creditBtn').onclick = function(){
+        alert('Credit Card payment option is a placeholder and not available for this project.');
+    };
+    // Show online banking button
+    document.getElementById('onlineBtn').onclick = function() {
+        alert('Online Banking payment option is a placeholder and not available for this project.');
+    };
+    // Show cancel payment
+    document.getElementById('cancelPaymentBtn').onclick = function() {
+        document.getElementById('paymentModal').style.display = 'none';
+    };
+
+
 });
 </script>
 </body>

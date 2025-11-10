@@ -18,7 +18,21 @@
 	background-size: cover;
 	background-position: center;
 }
-
+/* Container for total cost  */
+#total-cost-container {
+  position: absolute;
+  right: 30px;
+  bottom: 30px;
+  background: #fffbe8;
+  border: 2px solid #ffd700;
+  color: #914d00;
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-size: 1.4em;
+  font-weight: bold;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  z-index: 10;
+}
 #booking::before {
 	content: '';
 	position: absolute;
@@ -33,6 +47,7 @@
 	max-width: 642px;
 	width: 100%;
 	margin: auto;
+	position: relative;
 }
 
 .booking-form .form-header {
