@@ -37,12 +37,12 @@ app.post('/api/booking', async (req, res) => {
     request.input('UserID', sql.Int, userID);
     request.input('AreaID', sql.Int, areaID);
     request.input('SlotNumber', sql.Int, slotNumber);
-    request.input('FirstName', sql.NVarChar(100), firstName);
-    request.input('LastName', sql.NVarChar(100), lastName);
-    request.input('Email', sql.NVarChar(255), email);
-    request.input('Phone', sql.NVarChar(50), phone);
-    request.input('UserAddress', sql.NVarChar(255), userAddress);
-    request.input('StartTime', sql.DateTime, startTime);
+    request.input('first_name', sql.NVarChar(100), firstName);
+    request.input('last_name', sql.NVarChar(100), lastName);
+    request.input('email', sql.NVarChar(255), email);
+    request.input('phoneNum', sql.NVarChar(50), phone);
+    request.input('addr', sql.NVarChar(255), userAddress);
+    request.input('slot-date', sql.DateTime, startTime);
     request.input('EndTime', sql.DateTime, endTime);
     // Don't pass Status or CreatedAt unless you need to override the default
 
