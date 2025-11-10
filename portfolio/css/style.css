@@ -20,8 +20,8 @@
 }
 /* Container for total cost  */
 #total-cost-container {
-  position: absolute;
-  right: 30px;
+  position: absolute;      /* keep anchored to its nearest positioned ancestor */
+  left: 50%;
   bottom: 30px;
   background: #fffbe8;
   border: 2px solid #ffd700;
@@ -30,7 +30,7 @@
   border-radius: 10px;
   font-size: 1.4em;
   font-weight: bold;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   z-index: 10;
 }
 #booking::before {

@@ -33,6 +33,10 @@ app.post('/api/booking', async (req, res) => {
 
   try {
     const poolConn = await pool; // assuming pooled connection from './db'
+    
+    const startDate = new Date(StartTime);
+    const endDate = new Date(EndTime);
+
     await poolConn.request()
       .input('UserID', sql.Int, UserID)
       .input('AreaID', sql.Int, AreaID)
