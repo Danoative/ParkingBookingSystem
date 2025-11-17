@@ -82,5 +82,14 @@ app.get('/api/test-db', async (req, res) => {
     });
   }
 });
+// This is to test the database if the users table is recognized
+app.get('/api/users/test', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT UserID, username, email, role FROM Users ORDER BY UserID DESC LIMIT 1');
+    res.json(rows[0] || null);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.listen(3000, () => console.log('Server started on port 3000'));

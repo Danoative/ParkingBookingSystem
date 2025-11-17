@@ -1,3 +1,4 @@
+CREATE SCHEMA `bookingparkingsystem` ;
 -- User
 CREATE TABLE Users(
 	UserID INT PRIMARY KEY AUTO_INCREMENT,
