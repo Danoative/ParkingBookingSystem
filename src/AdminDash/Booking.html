@@ -4,9 +4,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin Dashboard - Users</title>
+  <title>Parking Slot</title>
   <link rel="shortcut icon" type="image/png" href="../assets/images/logos/seodashlogo.png" />
-  
+  <link rel="stylesheet" href="../../node_modules/simplebar/dist/simplebar.min.css">
   <link rel="stylesheet" href="../assets/css/styles.min.css" />
 </head>
 
@@ -46,7 +46,7 @@
               <span class="hide-menu">Information</span>
             </li>
             <li class="sidebar-item">
-              <a class="sidebar-link" href="./ui-buttons.html" aria-expanded="false">
+              <a class="sidebar-link" href="./parkingslot.html" aria-expanded="false">
                 <span>
                   <iconify-icon icon="solar:layers-minimalistic-bold-duotone" class="fs-6"></iconify-icon>
                 </span>
@@ -54,7 +54,7 @@
               </a>
             </li>
             <li class="sidebar-item">
-              <a class="sidebar-link" href="./ui-alerts.html" aria-expanded="false">
+              <a class="sidebar-link" href="./user.html" aria-expanded="false">
                 <span>
                   <iconify-icon icon="solar:danger-circle-bold-duotone" class="fs-6"></iconify-icon>
                 </span>
@@ -62,11 +62,11 @@
               </a>
             </li>
             <li class="sidebar-item">
-              <a class="sidebar-link" href="./ui-card.html" aria-expanded="false">
+              <a class="sidebar-link" href="./Booking.html" aria-expanded="false">
                 <span>
                   <iconify-icon icon="solar:bookmark-square-minimalistic-bold-duotone" class="fs-6"></iconify-icon>
                 </span>
-                <span class="hide-menu">Transaction</span>
+                <span class="hide-menu">Booking</span>
               </a>
             </li>
             <li class="sidebar-item">
@@ -107,25 +107,7 @@
             </li>
             <li class="nav-small-cap">
               <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4" class="fs-6"></iconify-icon>
-              
-              <!-- <span class="hide-menu">EXTRA</span>
-            </li>
-            <li class="sidebar-item">
-              <a class="sidebar-link" href="./icon-tabler.html" aria-expanded="false">
-                <span>
-                  <iconify-icon icon="solar:sticker-smile-circle-2-bold-duotone" class="fs-6"></iconify-icon>
-                </span>
-                <span class="hide-menu">Icons</span>
-              </a>
-            </li>
-            <li class="sidebar-item">
-              <a class="sidebar-link" href="./sample-page.html" aria-expanded="false">
-                <span>
-                  <iconify-icon icon="solar:planet-3-bold-duotone" class="fs-6"></iconify-icon>
-                </span>
-                <span class="hide-menu">Sample Page</span>
-              </a>
-            </li> -->
+
           </ul>
           
         </nav>
@@ -162,48 +144,104 @@
         </nav>
       </header>
       <!--  Header End -->
-      <div class="container-fluid">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title fw-semibold mb-4">Alerts</h5>
-            <div class="card mb-0">
-              <div class="card-body p-4">
-                <div class="alert alert-primary" role="alert">
-                  A simple primary alert—check it out!
-                </div>
-                <div class="alert alert-secondary" role="alert">
-                  A simple secondary alert—check it out!
-                </div>
-                <div class="alert alert-success" role="alert">
-                  A simple success alert—check it out!
-                </div>
-                <div class="alert alert-danger" role="alert">
-                  A simple danger alert—check it out!
-                </div>
-                <div class="alert alert-warning" role="alert">
-                  A simple warning alert—check it out!
-                </div>
-                <div class="alert alert-info" role="alert">
-                  A simple info alert—check it out!
-                </div>
-                <div class="alert alert-light" role="alert">
-                  A simple light alert—check it out!
-                </div>
-                <div class="alert alert-dark" role="alert">
-                  A simple dark alert—check it out!
-                </div>
+          <div class="card mt-4">
+            <div class="card-body">
+              <h5 class="card-title fw-semibold mb-4">Booking Overview</h5>
+
+              <div id="booking-overview" class="table-responsive">
+                <table class="table table-striped align-middle">
+                  <thead>
+                    <tr>
+                      <th>Username</th>
+                      <th>Start Date</th>
+                      <th>End Date</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="booking-table-body">
+                    <!-- Rows populated dynamically by JS -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-        </div>
-        <div class="py-6 px-6 text-center">
-          <p class="mb-0 fs-4">Design and Developed by <a href="https://adminmart.com/" target="_blank"
-              class="pe-1 text-primary text-decoration-underline">AdminMart.com</a> Distributed by <a href="https://themewagon.com/" target="_blank"
-              class="pe-1 text-primary text-decoration-underline">ThemeWagon</a></p>
+    <!-- Initial Slot will be appended by JS -->
+    <!-- Booking Details Modal -->
+    <div class="modal fade" id="bookingDetailsModal" tabindex="-1" aria-labelledby="bookingDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="bookingDetailsModalLabel">Booking Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="booking-details-content">
+              <!-- Detailed info will load here dynamically -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
         </div>
       </div>
     </div>
+</div>
   </div>
+
+<!--  -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+  fetch("/api/bookings")
+    .then(res => res.json())
+    .then(bookings => {
+      const tbody = document.getElementById("booking-table-body");
+      tbody.innerHTML = "";
+
+      bookings.forEach(b => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${b.FirstName} ${b.LastName}</td>
+          <td>${new Date(b.StartTime).toLocaleString()}</td>
+          <td>${new Date(b.EndTime).toLocaleString()}</td>
+          <td><span class="badge bg-info">${b.BookingStat}</span></td>
+        `;
+        row.style.cursor = "pointer";
+
+        row.addEventListener("click", () => showBookingDetails(b));
+
+        tbody.appendChild(row);
+      });
+    })
+    .catch(err => console.error("Error loading bookings:", err));
+});
+
+function showBookingDetails(booking) {
+  const modalBody = document.getElementById("booking-details-content");
+  modalBody.innerHTML = `
+    <div class="row">
+      <div class="col-md-6">
+        <p><strong>User:</strong> ${booking.FirstName} ${booking.LastName}</p>
+        <p><strong>Email:</strong> ${booking.Email}</p>
+        <p><strong>Phone:</strong> ${booking.Phone}</p>
+        <p><strong>Address:</strong> ${booking.UserAddress}</p>
+      </div>
+      <div class="col-md-6">
+        <p><strong>Slot Number:</strong> ${booking.SlotNumber}</p>
+        <p><strong>Start Time:</strong> ${new Date(booking.StartTime).toLocaleString()}</p>
+        <p><strong>End Time:</strong> ${new Date(booking.EndTime).toLocaleString()}</p>
+        <p><strong>Status:</strong> <span class="badge bg-primary">${booking.BookingStat}</span></p>
+      </div>
+    </div>
+  `;
+
+  const modal = new bootstrap.Modal(document.getElementById("bookingDetailsModal"));
+  modal.show();
+}
+
+</script>
+
+  <!--  -->
   <script src="../assets/libs/jquery/dist/jquery.min.js"></script>
   <script src="../assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../assets/libs/simplebar/dist/simplebar.js"></script>
