@@ -1,84 +1,113 @@
 -- User
 CREATE TABLE Users(
-	UserID INT IDENTITY(1,1) PRIMARY KEY,
+	UserID INT PRIMARY KEY AUTO_INCREMENT,
 	Username NVARCHAR(20) NOT NULL,
 	FullName NVARCHAR(100) NOT NULL,
 	LastName NVARCHAR(100) NOT NULL,
-	Email NVARCHAR(100) UNIQUE NOT NULL,
+	Email NVARCHAR(100) NOT NULL UNIQUE,
 	PasswordHash NVARCHAR(255) NOT NULL,
 	Address NVARCHAR(255) NOT NULL,
-	Role NVARCHAR(50) DEFAULT 'CUSTOMER',
-	CreateAt DATETIME DEFAULT GETDATE()
+	Role ENUM('CUSTOMER','ADMIN','MANAGER') NOT NULL DEFAULT 'CUSTOMER',
+	CreateAt DATETIME DEFAULT GETDATE(),
+    UpdatedAT DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT CheckNameLength CHECK (CHAR_LENGTH(username) BETWEEN 3 AND 20)
 );
 
 -- Admin
 CREATE TABLE Admins(
-	AdminID INT IDENTITY(1,1) PRIMARY KEY,
+	AdminID INT PRIMARY KEY AUTO_INCREMENT,
 	FullName NVARCHAR(100) NOT NULL,
 	Email NVARCHAR(100) UNIQUE NOT NULL,
 	PasswordHash NVARCHAR(255) NOT NULL,
-	Role NVARCHAR(50) DEFAULT 'MANAGER',
+	role ENUM('MANAGER','STAFF','SUPERADMIN') NOT NULL DEFAULT 'MANAGER',
 	CreateAt DATETIME DEFAULT GETDATE()
 );
 -- Vehicle
-CREATE TABLE Vehicle(
+CREATE TABLE Vehicles(
 	VehID INT IDENTITY(1,1) PRIMARY KEY,
-	UserID int,
+	UserID int NOT NULL,
 	FOREIGN KEY (UserID) references Users,
 	VehType NVARCHAR(100) NOT NULL,
 	PlateNum NVARCHAR(100) NOT NULL,
-	Email NVARCHAR(100) UNIQUE NOT NULL,
-	PasswordHash NVARCHAR(255) NOT NULL,
-	Address NVARCHAR(255) NOT NULL,
-	Role NVARCHAR(50) DEFAULT 'CUSTOMER',
-	CreateAt DATETIME DEFAULT GETDATE()
+	CreateAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_vehicle_user
+    FOREIGN KEY (UserID) REFERENCES users(UserID)
+    ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Parking SLot
 CREATE TABLE ParkingSlot(
 	SlotID INT IDENTITY(1,1) PRIMARY KEY,
-	AreaID INT,
-	VehID INT,
+	AreaID INT NOT NULL,
+	SlotNum INT NOT NULL,
 	SlotLocation varchar(100),
-	SlotStatus varchar(20) check (SlotStatus IN ('available', 'not available')),
-	FOREIGN KEY (AreaID) references ParkingAreas(AreaID),
-	FOREIGN KEY (VehID) references Vehicle(VehID)
+	SlotStatus ENUM('available','not available') NOT NULL DEFAULT 'available',
+    UNIQUE KEY uq_area_slot (AreaID, SlotNum),
+	CONSTRAINT fk_slot_area
+    FOREIGN KEY (AreaID) REFERENCES parking_areas(AreaID)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_slot_vehicle
+    FOREIGN KEY (currentVehID) REFERENCES vehicles(VehID)
+    ON DELETE SET NULL ON UPDATE CASCADE
 );
+
 -- Parking Area
 Create Table ParkingAreas (
-	AreaID int identity(1,1) primary key,
+	AreaID INT PRIMARY KEY AUTO_INCREMENT,
 	ParkName nvarchar(100) not null,
-	Location nvarchar(255),
+	ParkingLocation VARCHAR(255),
 	TotalSlots int not null,
 	AvailableSlots Int not null,
 	PricePerHour Decimal(10,2) not null,
-	CreateAt Datetime Default getdate()
+	CreateAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_slots_nonneg CHECK (TotalSlots >= 0 AND AvailableSlots >= 0),
+    CONSTRAINT chk_slots_cap CHECK (AvailableSlots <= TotalSlots),
+    CONSTRAINT chk_price_positive CHECK (PricePerHour >= 0)
 );
 -- Booking
 CREATE TABLE Booking (
- BookingID INT IDENTITY(1,1) PRIMARY KEY,
- UserID INT FOREIGN KEY REFERENCES Users(UserID),
- AreaID INT FOREIGN KEY REFERENCES ParkingAreas(AreaID),
- SlotNumber INT,
-FirstName NVARCHAR(100) NOT NULL,
- LastName NVARCHAR(100) NOT NULL,
-Email NVARCHAR(255) NOT NULL,
-Phone NVARCHAR(50) NOT NULL,
- UserAddress NVARCHAR(255) NOT NULL,
- StartTime DATETIME NOT NULL,
- EndTime DATETIME NOT NULL,
-Status NVARCHAR(50) DEFAULT 'PENDING',
- CreateAt DATETIME DEFAULT GETDATE()
+    BookingID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    AreaID INT NOT NULL,
+    SlotID  INT NOT NULL,
+    SlotNumber INT,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Email NVARCHAR(255) NOT NULL,
+    Phone NVARCHAR(50) NOT NULL,
+    UserAddress NVARCHAR(255) NOT NULL,
+    StartTime DATETIME NOT NULL,
+    EndTime DATETIME NOT NULL,
+    BookingStat ENUM('PENDING','CONFIRMED','CANCELLED','COMPLETED') NOT NULL DEFAULT 'PENDING',
+    CreateAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_booking_user
+    FOREIGN KEY (UserID) REFERENCES users(UserID)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_booking_area
+    FOREIGN KEY (AreaID) REFERENCES parking_areas(AreaID)
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_booking_slot
+    FOREIGN KEY (SlotID) REFERENCES parking_slots(SlotID)
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT chk_time_order CHECK (EndTime > StartTime)
 );
+
+
+
 -- Payment
 CREATE TABLE Payment (
     transacID INT PRIMARY KEY AUTO_INCREMENT,
-    transacTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    transacTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UserID INT NOT NULL,
     BookingID INT NOT NULL,
     TotalCost DECIMAL(12, 0) NOT NULL, -- Price in VND, adjust precision if needed
-    PayStat ENUM('Paid', 'Unpaid') NOT NULL DEFAULT 'Unpaid',
+    PayStat ENUM('Paid','Unpaid','Refunded') NOT NULL DEFAULT 'Unpaid',
     PayMethod ENUM('Online Banking', 'Credit Card', 'Pay In Cash') NOT NULL,
-    FOREIGN KEY (UserID) REFERENCES Users(UserID),
-    FOREIGN KEY (BookingID) REFERENCES Bookings(BookingID)
+     CONSTRAINT fk_payment_user
+    FOREIGN KEY (UserID) REFERENCES users(UserID)
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_payment_booking
+    FOREIGN KEY (BookingID) REFERENCES bookings(BookingID)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT chk_total_cost CHECK (TotalCost >= 0)
 );
