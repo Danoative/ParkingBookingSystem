@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Booking Parking System</title>
+    <!-- Google font -->
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet">
+    <!-- Bootstrap -->
+    <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css" />
+    <!-- Custom stylesheet -->
+    <link type="text/css" rel="stylesheet" href="css/style.css" />
+</head>
+
+<div class="modal" tabindex="-1" id="paymentModal" style="display:none; position:fixed; 
+top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:30px; border-radius:10px; max-width:400px; margin:auto; text-align:center;">
+    <h4>Select Payment Method</h4>
+    <button id="creditBtn" class="btn btn-secondary" style="margin:10px 0;" disabled>Credit Card (Coming Soon)</button><br>
+    <button id="onlineBtn" class="btn btn-secondary" style="margin:10px 0;" disabled>Online Banking (Coming Soon)</button><br>
+    <button id="cashBtn" class="btn btn-success" style="margin:10px 0;">Pay in Cash</button>
+    <br>
+    <button id="cancelPaymentBtn" class="btn btn-link" style="margin-top:10px;">Cancel</button>
+  </div>
+</div>
+
+<body>
+    <div id="booking" class="section">
+        <div class="top-buttons">
+            <button class="btn btn-primary">Login</button>
+            <button class="btn btn-secondary">Register</button>
+        </div>
+        <div class="section-center">
+            <div class="container">
+                <div class="row">
+                    <div class="booking-form">
+                        <div class="form-header">
+                            <h1>Book a Parking Spot</h1>
+                        </div>
+                        <form id="booking-form">
+                            <!-- Start Date Selection -->
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <span class="form-label">First Name</span>
+                                        <input class="form-control" name="FirstName" type="text" placeholder="Enter your first name" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <span class="form-label">Last Name</span>
+                                        <input class="form-control" name="LastName" type="text" placeholder="Enter your last name" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <span class="form-label">Email</span>
+                                <input class="form-control" name="Email" type="email" placeholder="Enter your email" required>
+                            </div>
+                            <div class="form-group">
+                                <span class="form-label">Phone</span>
+                                <input class="form-control" name="Phone" type="tel" placeholder="Enter your phone number" required>
+                            </div>
+                            <div class="form-group">
+                                <span class="form-label"> Plate Number</span>
+                                <input class="form-control" name="plateNum" type="plateNum" placeholder="Enter your plate number" required>
+                            </div>
+                            <div class="form-group">
+                                <span class="form-label">Address</span>
+                                <input class="form-control" name="UserAddress" type="text" placeholder="Enter your address" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-5">
+                                    <div class="form-group">
+                                        <span class="form-label">Start Date</span>
+                                        <input class="form-control" name="startDate" type="date" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-7">
+                                    <div class="row">
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">Hour</span>
+                                                <select class="form-control" name="startHour">
+                                                    <option>1</option>
+                                                    <option>2</option>
+                                                    <option>3</option>
+                                                    <option>4</option>
+                                                    <option>5</option>
+                                                    <option>6</option>
+                                                    <option>7</option>
+                                                    <option>8</option>
+                                                    <option>9</option>
+                                                    <option>10</option>
+                                                    <option>11</option>
+                                                    <option>12</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">Min</span>
+                                                <select class="form-control" name="startMin">
+                                                    <option>00</option>
+                                                    <option>05</option>
+                                                    <option>10</option>
+                                                    <option>15</option>
+                                                    <option>20</option>
+                                                    <option>25</option>
+                                                    <option>30</option>
+                                                    <option>35</option>
+                                                    <option>40</option>
+                                                    <option>45</option>
+                                                    <option>50</option>
+                                                    <option>55</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">AM/PM</span>
+                                                <select class="form-control" name="start_ampm">
+                                                    <option>AM</option>
+                                                    <option>PM</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                             <!-- End of Start -->
+
+                            <!-- Start of End Date Selection -->
+                            <div class="row">
+                                <div class="col-sm-5">
+                                    <div class="form-group">
+                                        <span class="form-label">End Date</span>
+                                        <input class="form-control" name="endDate" type="date" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-7">
+                                    <div class="row">
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">Hour</span>
+                                                <select class="form-control" name="endHour">
+                                                    <option>1</option>
+                                                    <option>2</option>
+                                                    <option>3</option>
+                                                    <option>4</option>
+                                                    <option>5</option>
+                                                    <option>6</option>
+                                                    <option>7</option>
+                                                    <option>8</option>
+                                                    <option>9</option>
+                                                    <option>10</option>
+                                                    <option>11</option>
+                                                    <option>12</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">Min</span>
+                                                <select class="form-control" name="endMin">
+                                                    <option>00</option>
+                                                    <option>05</option>
+                                                    <option>10</option>
+                                                    <option>15</option>
+                                                    <option>20</option>
+                                                    <option>25</option>
+                                                    <option>30</option>
+                                                    <option>35</option>
+                                                    <option>40</option>
+                                                    <option>45</option>
+                                                    <option>50</option>
+                                                    <option>55</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <span class="form-label">AM/PM</span>
+                                                <select class="form-control" name="end_ampm">
+                                                    <option>AM</option>
+                                                    <option>PM</option>
+                                                </select>
+                                                <span class="select-arrow"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <!-- End of End Date Selection -->
+
+
+
+                            <!-- Parking Slot Selection -->
+                            <div class="form-group">
+                                <span class="form-label">Choose a parking slot</span>
+                                <select class="form-control" name="SlotNumber" required>
+                                    <option value="1">Slot #1</option>
+                                    <option value="2">Slot #2</option>
+                                    <option value="3">Slot #3</option>
+                                    <option value="4">Slot #4</option>
+                                    <option value="5">Slot #5</option>
+                                    <option value="6">Slot #6</option>
+                                    <option value="7">Slot #7</option>
+                                    <option value="8">Slot #8</option>
+                                    <option value="9">Slot #9</option>
+                                    <option value="10">Slot #10</option>
+                                    <option value="11">Slot #11</option>
+                                    <option value="12">Slot #12</option>
+                                </select>
+                                <span class="select-arrow"></span>
+                            </div>
+                            <div class="form-btn">
+                                <button class="submit-btn" type="submit">Book Now</button>
+                            </div>
+                            <!-- Show the total cost -->
+                        <div class="form-group" style="margin-top:8px;">
+                            <div id="total-cost-container" style="position: static; display: inline-block; margin-top: 8px;">
+                                <span>Total Cost:&nbsp;</span>
+                                <span id="total-cost">0</span>
+                            <span> VND</span>
+                            </div>
+                        </div>
+                            <!-- End of total cost -->
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Centralized payload builder
+  function buildPayload() {
+    // Read values using consistent, matching names
+    const form = document.getElementById('booking-form');
+
+    // Adjust these selectors to match your actual input name attributes
+    const userId = Number(form.elements['UserID']?.value ?? 0);
+    const areaId = Number(form.elements['AreaID']?.value ?? 0);
+    const slotNumber = Number(form.elements['SlotNumber']?.value ?? 0);
+
+    const firstName = (form.elements['FirstName']?.value || '').trim();
+    const lastName  = (form.elements['LastName']?.value || '').trim();
+    const email     = (form.elements['Email']?.value || '').trim();
+    const phone     = (form.elements['Phone']?.value || '').trim();
+    const userAddress = (form.elements['UserAddress']?.value || '').trim();
+
+    // Time fields (ensure these exist in your form with these exact names)
+    const startDate = form.elements['startDate']?.value;
+    const startHour = (form.elements['startHour']?.value || '0').toString().padStart(2, '0');
+    const startMin  = (form.elements['startMin']?.value || '0').toString().padStart(2, '0');
+    const startAmpm = form.elements['start_ampm']?.value;
+
+    const endDate   = form.elements['endDate']?.value;
+    const endHour   = (form.elements['endHour']?.value || '0').toString().padStart(2, '0');
+    const endMin    = (form.elements['endMin']?.value || '0').toString().padStart(2, '0');
+    const endAmpm   = form.elements['end_ampm']?.value;
+
+    // Build StartTime/EndTime as strings; you can switch to ISO if you prefer
+    const StartTime = `${startDate} ${startHour}:${startMin} ${startAmpm}`;
+    const EndTime   = `${endDate} ${endHour}:${endMin} ${endAmpm}`;
+
+    const payload = {
+      UserID: userId,
+      AreaID: areaId,
+      SlotNumber: slotNumber,
+      FirstName: firstName,
+      LastName: lastName,
+      Email: email,
+      Phone: phone,
+      UserAddress: userAddress,
+      StartTime: StartTime,
+      EndTime: EndTime
+    };
+
+    return payload;
+  }
+
+  // Client-side validation
+  function validatePayload(p) {
+    const required = ['UserID','AreaID','SlotNumber','FirstName','LastName','Email','Phone','UserAddress','StartTime','EndTime'];
+    for (const key of required) {
+      if (p[key] == null || p[key] === '') {
+        return { ok: false, message: `Missing field: ${key}` };
+      }
+    }
+    // Basic email format
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.Email);
+    if (!emailOk) return { ok: false, message: 'Invalid email format' };
+
+    // Basic date parsing
+    const start = new Date(p.StartTime);
+    const end = new Date(p.EndTime);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return { ok: false, message: 'StartTime or EndTime is not a valid date/time' };
+    }
+
+    // End after start
+    if (end <= start) return { ok: false, message: 'EndTime must be after StartTime' };
+
+    // Optional: range checks for IDs
+    if (p.UserID < 0 || p.AreaID < 0 || p.SlotNumber < 0) {
+      return { ok: false, message: 'IDs and slot must be non-negative' };
+    }
+
+    return { ok: true };
+  }
+
+  // Form submission
+  const form = document.getElementById('booking-form');
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const payload = buildPayload();
+    const validation = validatePayload(payload);
+    if (!validation.ok) {
+      alert(validation.message);
+      return;
+    }
+
+    // Optional: show payment modal or proceed to immediate submit
+    // Here we proceed to submit directly
+    try {
+      const res = await fetch('http://localhost:3000/api/booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (result && result.success) {
+        alert('Booking created: ' + (result.message || 'OK'));
+      } else {
+        alert('Booking failed: ' + (result?.error ?? 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Network error: ' + err.message);
+    }
+  });
+
+  // Optional: modal button behaviors if you keep the payment modal
+  const cashBtn = document.getElementById('cashBtn');
+  if (cashBtn) {
+    cashBtn.addEventListener('click', async function() {
+      document.getElementById('paymentModal').style.display = 'none';
+      // You might want to trigger a second POST here if you split flows.
+    });
+  }
+
+  // Existing placeholder handlers can remain but ensure they don't crash if elements missing
+  const creditBtn = document.getElementById('creditBtn');
+  if (creditBtn) {
+    creditBtn.addEventListener('click', function() {
+      alert('Credit Card payment option is a placeholder and not available for this project.');
+    });
+  }
+  const onlineBtn = document.getElementById('onlineBtn');
+  if (onlineBtn) {
+    onlineBtn.addEventListener('click', function() {
+      alert('Online Banking payment option is a placeholder and not available for this project.');
+    });
+  }
+  const cancelBtn = document.getElementById('cancelPaymentBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() {
+      document.getElementById('paymentModal').style.display = 'none';
+    });
+  }
+});
+</script>
+</body>
+</html>
