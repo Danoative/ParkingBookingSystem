@@ -1,12 +1,16 @@
+
 // server.js
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { sql, pool } = require('./db'); //get db.js
+const { pool, connectDB } = require('./db'); // from the mysql2-based db.js
 const cors = require('cors');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// optional: verify connection on startup
+connectDB().catch(() => process.exit(1));
 
 // User Register System here
 
@@ -62,19 +66,19 @@ app.post('/api/booking', async (req, res) => {
 
 // Parking Lot System
 
-// This is to test the database if it's connected to MSSQL Server Express
+// This is to test the database if it's connected to MySQL Server
 app.get('/api/test-db', async (req, res) => {
   try {
-    const poolConn = await pool; // from your db.js
-    const result = await poolConn.request().query('SELECT TOP 1 * FROM Admins'); // Change admins to what table in the database's table 
+    // Example table: admins (rename to your actual table if different)
+    const [rows] = await pool.query('SELECT * FROM admins LIMIT 1');
     res.json({
       connected: true,
-      row: result.recordset[0] || null
+      row: rows[0] || null,
     });
   } catch (err) {
     res.status(500).json({
       connected: false,
-      error: err.message
+      error: err.message,
     });
   }
 });
