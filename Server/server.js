@@ -141,14 +141,14 @@ app.delete('/api/users/:table/:id', requireAdmin, async (req, res) => {
 
 // Admin Login System
 
-// Booking System
+
+// Booking System 
 app.post('/api/booking', async (req, res) => {
   const {
     UserID,
     AreaID,
     SlotNumber,
-    FirstName,
-    LastName,
+    FulltName,
     Email,
     Phone,
     UserAddress,
@@ -157,17 +157,13 @@ app.post('/api/booking', async (req, res) => {
   } = req.body;
 
   try {
-    const poolConn = await pool; // assuming pooled connection from './db'
-    
-    const startDate = new Date(StartTime);
-    const endDate = new Date(EndTime);
+    const poolConn = await pool;
 
     await poolConn.request()
       .input('UserID', sql.Int, UserID)
       .input('AreaID', sql.Int, AreaID)
       .input('SlotNumber', sql.Int, SlotNumber)
-      .input('FirstName', sql.NVarChar(100), FirstName)
-      .input('LastName', sql.NVarChar(100), LastName)
+      .input('FullName', sql.NVarChar(100), FulltName)
       .input('Email', sql.NVarChar(255), Email)
       .input('Phone', sql.NVarChar(50), Phone)
       .input('UserAddress', sql.NVarChar(255), UserAddress)
@@ -175,15 +171,55 @@ app.post('/api/booking', async (req, res) => {
       .input('EndTime', sql.DateTime, EndTime)
       .query(`
         INSERT INTO Booking
-        (UserID, AreaID, SlotNumber, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime)
-        VALUES (@UserID, @AreaID, @SlotNumber, @FirstName, @LastName, @Email, @Phone, @UserAddress, @StartTime, @EndTime)
+        (UserID, AreaID, SlotNumber, FulltName, Email, Phone, UserAddress, StartTime, EndTime)
+        VALUES (@UserID, @AreaID, @SlotNumber, @FullName, @Email, @Phone, @UserAddress, @StartTime, @EndTime)
       `);
 
-    res.json({ success: true, message: "Booking successfully created.", received: req.body });
+    res.json({ success: true, message: "Booking successfully created." });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// Edit Booking
+app.put('/api/bookings/:id', async (req, res) => {
+  const { EndTime, BookingStat } = req.body;
+  const { id } = req.params;
+
+  try {
+    const poolConn = await pool;
+
+    await poolConn.request()
+      .input('BookingID', sql.Int, id)
+      .input('EndTime', sql.DateTime, EndTime)
+      .input('BookingStat', sql.NVarChar(20), BookingStat)
+      .query(`
+        UPDATE Booking
+        SET EndTime = @EndTime, BookingStat = @BookingStat
+        WHERE BookingID = @BookingID
+      `);
+
+    res.json({ success: true, message: `Booking ${id} has been updated.` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+// Delete Booking
+app.delete('/api/bookings/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const poolConn = await pool;
+
+    await poolConn.request()
+      .input('BookingID', sql.Int, id)
+      .query(`DELETE FROM Booking WHERE BookingID = @BookingID`);
+
+    res.json({ success: true, message: `Booking ${id} deleted successfully.` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 // Parking Lot System
 
