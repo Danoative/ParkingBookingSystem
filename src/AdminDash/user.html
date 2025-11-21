@@ -110,24 +110,6 @@
             <li class="nav-small-cap">
               <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4" class="fs-6"></iconify-icon>
               
-              <!-- <span class="hide-menu">EXTRA</span>
-            </li>
-            <li class="sidebar-item">
-              <a class="sidebar-link" href="./icon-tabler.html" aria-expanded="false">
-                <span>
-                  <iconify-icon icon="solar:sticker-smile-circle-2-bold-duotone" class="fs-6"></iconify-icon>
-                </span>
-                <span class="hide-menu">Icons</span>
-              </a>
-            </li>
-            <li class="sidebar-item">
-              <a class="sidebar-link" href="./sample-page.html" aria-expanded="false">
-                <span>
-                  <iconify-icon icon="solar:planet-3-bold-duotone" class="fs-6"></iconify-icon>
-                </span>
-                <span class="hide-menu">Sample Page</span>
-              </a>
-            </li> -->
           </ul>
           
         </nav>
@@ -155,9 +137,7 @@
             </li>
           </ul>
           <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
-            <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">
-              
-                
+            <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">   
               </li>
             </ul>
           </div>
@@ -196,268 +176,110 @@
   <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
 
 <script>
-// --- Config: derive API base path from current location, with optional override ---
-function getApiBase() {
-  // Example: https://host[:port]/app/page -> base = origin + '/'
-  // If your server mounts API under '/api', keep apiPrefix = '/api'
-  const apiPrefix = '/api';
-  const { origin } = window.location;
-  // Optional: allow a global override via <meta name="api-base" content="https://api.example.com/api">
-  const meta = document.querySelector('meta[name="api-base"]');
-  if (meta?.content) return meta.content.replace(/\/+$/, '');
-  return (origin + apiPrefix).replace(/\/+$/, '');
+// Utility for showing/hiding errors
+function showError(msg) {
+  const errBox = document.getElementById('usersError');
+  errBox.textContent = msg;
+  errBox.classList.remove('d-none');
+}
+function hideError() {
+  document.getElementById('usersError').classList.add('d-none');
 }
 
-// Utility: JSON fetch wrapper
-async function jfetch(url, opts = {}) {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
-    credentials: 'include', // include cookies if your auth uses sessions
-    ...opts
-  });
-  const isJson = res.headers.get('content-type')?.includes('application/json');
-  const body = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null);
-  if (!res.ok) {
-    const msg = body?.error || body?.message || res.statusText;
-    throw new Error(msg);
-  }
-  return body;
-}
-
-// Elements
-const usersListEl = document.getElementById('usersList');
-const addBtn = document.getElementById('addBtn');
-const newUsernameEl = document.getElementById('newUsername');
-const newEmailEl = document.getElementById('newEmail');
-const newPasswordEl = document.getElementById('newPassword');
-const newRoleEl = document.getElementById('newRole');
-
-// Current admin info to prevent self-edit/delete in UI
-const root = document.body; // or a specific container
-const CURRENT_USER_ID = Number(root?.dataset?.currentUserId || '0');
-const CURRENT_USER_TABLE = String(root?.dataset?.currentUserTable || 'admin'); // 'admin' or 'users'
-
-// Render helpers
-function roleBadge(role) {
-  const isAdmin = role === 'admin';
-  const badgeClass = isAdmin ? 'bg-danger' : 'bg-secondary';
-  const label = isAdmin ? 'Admin' : 'Customer';
-  return `<span class="badge ${badgeClass} ms-2">${label}</span>`;
-}
-
-function actionButtons(row) {
-  const isSelf = CURRENT_USER_ID === row.id && CURRENT_USER_TABLE === row.table;
-  const editDisabled = isSelf ? 'disabled title="Cannot edit your own account here"' : '';
-  // Never allow delete for admin table; and also block self-delete
-  const deleteDisabled = (row.role === 'admin' || isSelf)
-    ? 'disabled title="Cannot delete admin or your own account"' : '';
-  return `
-    <div class="btn-group btn-group-sm" role="group">
-      <button class="btn btn-outline-primary" data-action="edit" data-id="${row.id}" data-table="${row.table}" ${editDisabled}>Edit</button>
-      <button class="btn btn-outline-danger" data-action="delete" data-id="${row.id}" data-table="${row.table}" ${deleteDisabled}>Delete</button>
-    </div>
-  `;
-}
-
-function rowItem(row) {
-  // row = { id, table, username, email, role }
-  return `
-    <div class="list-group-item d-flex justify-content-between align-items-center">
-      <div class="me-3">
-        <div>
-          <span class="fw-semibold">${row.username}</span>
-          ${roleBadge(row.role)}
-        </div>
-        <div class="text-muted small">${row.email || ''}</div>
-      </div>
-      ${actionButtons(row)}
-    </div>
-  `;
-}
-
-function editModalTemplate() {
-  // Simple inline modal; replace with your Bootstrap modal if you already include it
-  if (document.getElementById('editUserModal')) return '';
-  return `
-    <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <form class="modal-content" id="editUserForm">
-          <div class="modal-header">
-            <h5 class="modal-title">Edit user</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" id="editUserId">
-            <input type="hidden" id="editUserTable">
-            <div class="mb-3">
-              <label class="form-label">Username</label>
-              <input class="form-control" id="editUsername" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-control" id="editEmail" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">New password (optional)</label>
-              <input type="password" class="form-control" id="editPassword" placeholder="Leave blank to keep current">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
-            <button class="btn btn-primary" type="submit">Save changes</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-}
-
-// Mount edit modal
-document.body.insertAdjacentHTML('beforeend', editModalTemplate());
-
-// Bootstrap modal instance (if Bootstrap JS loaded)
-let editModalInstance = null;
-(function initModal() {
-  const m = document.getElementById('editUserModal');
-  if (window.bootstrap && m) {
-    editModalInstance = new bootstrap.Modal(m);
-  }
-})();
-
-// Load list
+// Load current users and render
 async function loadUsers() {
-  const base = getApiBase();
   try {
-    const rows = await jfetch(`${base}/users`);
-    if (!Array.isArray(rows) || rows.length === 0) {
-      usersListEl.innerHTML = `<div class="list-group-item text-muted">No users found</div>`;
-      return;
-    }
-    usersListEl.innerHTML = rows.map(rowItem).join('');
-    bindRowActions();
-  } catch (e) {
-    usersListEl.innerHTML = `<div class="list-group-item text-danger">Failed to load users: ${e.message}</div>`;
+    hideError();
+    const res = await fetch('http://localhost:3000/api/users');
+    if (!res.ok) throw new Error('Failed to load');
+    const users = await res.json();
+
+    const usersList = document.getElementById('usersList');
+    usersList.innerHTML = '';
+    users.forEach(renderUserItem);
+  } catch (err) {
+    showError('Failed to load users.');
   }
 }
 
-// Bind row action buttons
-function bindRowActions() {
-  usersListEl.querySelectorAll('button[data-action]').forEach(btn => {
-    const action = btn.getAttribute('data-action');
-    const id = Number(btn.getAttribute('data-id'));
-    const table = btn.getAttribute('data-table');
-    if (action === 'delete') {
-      btn.addEventListener('click', () => onDelete(table, id));
-    } else if (action === 'edit') {
-      btn.addEventListener('click', () => onEditOpen(table, id));
+// Render a single user row/card
+function renderUserItem(user) {
+  const li = document.createElement('div');
+  li.className = "list-group-item d-flex gap-3 align-items-center";
+  li.innerHTML = `
+    <span class="fw-semibold" style="min-width:100px">${user.Username}</span>
+    <span class="text-muted" style="min-width:160px">${user.Email}</span>
+    <span class="badge bg-info" style="min-width:90px">${user.Role}</span>
+    <span class="text-muted" style="min-width:160px">${user.Address}</span>
+    <button class="btn btn-sm btn-warning editBtn me-1">Edit</button>
+    <button class="btn btn-sm btn-danger removeBtn">Remove</button>
+  `;
+  // Edit user
+  li.querySelector('.editBtn').onclick = () => showEditUserModal(user);
+  // Remove user
+  li.querySelector('.removeBtn').onclick = async () => {
+    if (confirm(`Are you sure you want to remove ${user.Username}?`)) {
+      const res = await fetch(`http://localhost:3000/api/users/${user.UserID}`, { method: 'DELETE' });
+      await loadUsers();
     }
-  });
+  };
+  document.getElementById('usersList').appendChild(li);
 }
 
-// Create user
-async function onAdd() {
-  const username = newUsernameEl?.value?.trim();
-  const email = newEmailEl?.value?.trim();
-  const password = newPasswordEl?.value || '';
-  const role = newRoleEl?.value || 'customer';
-
-  if (!username || !email || !password) {
-    alert('Username, email, and password are required');
+// Add new user
+document.getElementById('addBtn').onclick = async () => {
+  hideError();
+  const Username = document.getElementById('newUsername').value.trim();
+  const Role = document.getElementById('newRole').value.toUpperCase();
+  // Prompt details
+  const Email = prompt("User email?");
+  const Password = prompt("Password (will be encrypted):");
+  const Address = prompt("User address?");
+  if (!Username || !Email || !Password || !Address) {
+    showError('All fields must be filled.');
     return;
   }
+  const res = await fetch('http://localhost:3000/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Username, Email, Password, Address, Role })
+  });
+  if (res.ok) await loadUsers();
+  else showError('Failed to add user.');
+};
 
-  const base = getApiBase();
-  try {
-    await jfetch(`${base}/users`, {
-      method: 'POST',
-      body: JSON.stringify({ username, email, password, role })
-    });
-    if (newUsernameEl) newUsernameEl.value = '';
-    if (newEmailEl) newEmailEl.value = '';
-    if (newPasswordEl) newPasswordEl.value = '';
-    await loadUsers();
-  } catch (e) {
-    alert(`Failed to add user: ${e.message}`);
+// Show Edit dialog
+function showEditUserModal(user) {
+  const Username = prompt("Edit username:", user.Username);
+  const Email = prompt("Edit email:", user.Email);
+  const Address = prompt("Edit address:", user.Address);
+  const Role = prompt("Edit role (CUSTOMER, ADMIN, MANAGER):", user.Role);
+  const Password = prompt("Set new password (leave blank to keep):");
+
+  if (!Username || !Email || !Address || !Role) {
+    showError('All fields must be filled for edit.');
+    return;
   }
+  // Only send Password if changed
+  let payload = { Username, Email, Address, Role };
+  if (Password) payload.Password = Password;
+
+  fetch(`http://localhost:3000/api/users/${user.UserID}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(res => {
+    if (res.ok) loadUsers();
+    else showError('Failed to update user.');
+  });
 }
 
-// Edit open
-async function onEditOpen(table, id) {
-  // Prevent edit if self (should already be disabled)
-  if (CURRENT_USER_TABLE === table && CURRENT_USER_ID === id) {
-    return alert('Cannot edit your own account here');
-  }
-  // Fetch current row from the list DOM (simple approach)
-  const item = [...usersListEl.querySelectorAll('.list-group-item')].find(div =>
-    div.querySelector(`button[data-id="${id}"][data-table="${table}"]`)
-  );
-  // Extract displayed values (or refetch from API if you prefer)
-  const nameText = item?.querySelector('.fw-semibold')?.textContent?.trim() || '';
-  const emailText = item?.querySelector('.text-muted')?.textContent?.trim() || '';
-
-  document.getElementById('editUserId').value = String(id);
-  document.getElementById('editUserTable').value = table;
-  document.getElementById('editUsername').value = nameText;
-  document.getElementById('editEmail').value = emailText;
-  document.getElementById('editPassword').value = '';
-
-  if (editModalInstance) editModalInstance.show();
-  else document.getElementById('editUserModal').classList.add('show'); // fallback
-}
-
-// Edit submit
-document.getElementById('editUserForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const id = Number(document.getElementById('editUserId').value);
-  const table = document.getElementById('editUserTable').value;
-  const username = document.getElementById('editUsername').value.trim();
-  const email = document.getElementById('editEmail').value.trim();
-  const password = document.getElementById('editPassword').value;
-
-  const payload = {};
-  if (username) payload.username = username;
-  if (email) payload.email = email;
-  if (password) payload.password = password;
-
-  const base = getApiBase();
-  try {
-    await jfetch(`${base}/users/${encodeURIComponent(table)}/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload)
-    });
-    if (editModalInstance) editModalInstance.hide();
-    await loadUsers();
-  } catch (err) {
-    alert(`Failed to update user: ${err.message}`);
-  }
-});
-
-// Delete user
-async function onDelete(table, id) {
-  // Prevent self delete in UI
-  if (CURRENT_USER_TABLE === table && CURRENT_USER_ID === id) {
-    return alert('Cannot delete your own account');
-  }
-  // Never delete admins
-  if (table === 'admin') {
-    return alert('Cannot delete admin accounts');
-  }
-  if (!confirm('Delete this customer user?')) return;
-  const base = getApiBase();
-  try {
-    await jfetch(`${base}/users/${encodeURIComponent(table)}/${id}`, { method: 'DELETE' });
-    await loadUsers();
-  } catch (e) {
-    alert(`Failed to delete user: ${e.message}`);
-  }
-}
-
-// Wire add button
-addBtn?.addEventListener('click', onAdd);
-
-// Initialize
-loadUsers();
+// Initial load
+window.addEventListener('DOMContentLoaded', loadUsers);
 </script>
+</script>
+
+
 </body>
 
 </html>

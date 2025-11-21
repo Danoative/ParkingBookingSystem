@@ -53,12 +53,9 @@ CREATE TABLE ParkingAreas (
 CREATE TABLE ParkingSlot(
     SlotID INT PRIMARY KEY AUTO_INCREMENT,
     AreaID INT NOT NULL,
-    SlotNum INT NOT NULL,
     CurrentVehID INT NULL,
     SlotLocation VARCHAR(100),
     SlotStatus ENUM('available','not available') NOT NULL DEFAULT 'available',
-
-    UNIQUE KEY uq_area_slot (AreaID, SlotNum),
 
     CONSTRAINT fk_slot_area
         FOREIGN KEY (AreaID) REFERENCES ParkingAreas(AreaID)
@@ -77,7 +74,6 @@ CREATE TABLE Booking (
     UserID INT NOT NULL,
     AreaID INT NOT NULL,
     SlotID INT NOT NULL,
-    SlotNumber INT,
     FirstName VARCHAR(100) NOT NULL,
     LastName VARCHAR(100) NOT NULL,
     Email VARCHAR(255) NOT NULL,
