@@ -8,8 +8,6 @@ USE bookingparkingsystem;
 CREATE TABLE Users(
     UserID INT PRIMARY KEY AUTO_INCREMENT,
     Username VARCHAR(20) NOT NULL,
-    FullName VARCHAR(100) NOT NULL,
-    LastName VARCHAR(100) NOT NULL,
     Email VARCHAR(100) NOT NULL UNIQUE,
     PasswordHash VARCHAR(255) NOT NULL,
     Address VARCHAR(255) NOT NULL,
