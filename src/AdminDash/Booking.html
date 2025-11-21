@@ -132,30 +132,28 @@
       </header>
       <!--  Header End -->
 
-          <div class="card mt-4">
-            <div class="card-body">
-              <h5 class="card-title fw-semibold mb-4">Booking Overview</h5>
-
-              <div id="booking-overview" class="table-responsive">
-
-                <table class="table table-striped align-middle">
-                    <thead>
-                      <tr>
-                        <th>Username (FullName)</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="booking-table-body">
-                      <!-- Rows populated dynamically -->
-                    </tbody>
-                  </table>
-
-              </div>
-            </div>
+      <div class="card mt-4">
+        <div class="card-body">
+          <h5 class="card-title fw-semibold mb-4">Booking Overview</h5>
+          <div id="booking-overview" class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>Username (FullName)</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Status</th>
+                  <th>Payment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="booking-table-body">
+                <!-- Rows populated dynamically -->
+              </tbody>
+            </table>
           </div>
+        </div>
+      </div>
     <!-- Initial Slot will be appended by JS -->
 
     <!-- Booking Details Modal -->
@@ -170,7 +168,7 @@
           <div class="modal-body">
             <div id="booking-details-content">
               <!-- Detailed info will load here dynamically -->
-               
+
             </div>
           </div>
           <div class="modal-footer">
@@ -216,132 +214,113 @@
 
 <!--  -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-  fetch("/api/bookings")
-    .then(res => res.json())
-    .then(bookings => {
-      const tbody = document.getElementById("booking-table-body");
-      tbody.innerHTML = "";
-
-      bookings.forEach(b => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${b.FirstName} ${b.LastName}</td>
-          <td>${new Date(b.StartTime).toLocaleString()}</td>
-          <td>${new Date(b.EndTime).toLocaleString()}</td>
-          <td><span class="badge bg-info">${b.BookingStat}</span></td>
-        `;
-        row.style.cursor = "pointer";
-
-        row.addEventListener("click", () => showBookingDetails(b));
-
-        tbody.appendChild(row);
-      });
-    })
-    .catch(err => console.error("Error loading bookings:", err));
-});
-// Load Bookoing
-document.addEventListener("DOMContentLoaded", function () {
-  loadBookings();
-});
-
-function loadBookings() {
-  fetch("/api/bookings")
-    .then(res => res.json())
-    .then(bookings => {
-      const tbody = document.getElementById("booking-table-body");
-      tbody.innerHTML = "";
-
-      bookings.forEach(b => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${b.FirstName} ${b.LastName}</td>
-          <td>${new Date(b.StartTime).toLocaleString()}</td>
-          <td>${new Date(b.EndTime).toLocaleString()}</td>
-          <td><span class="badge bg-info">${b.BookingStat}</span></td>
-          <td>
-            <button class="btn btn-sm btn-warning me-2" onclick="editBooking(${b.BookingID})">Edit</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteBooking(${b.BookingID})">Delete</button>
-          </td>
-        `;
-        row.addEventListener("click", (e) => {
-          if (!e.target.closest("button")) {
-            showBookingDetails(b);
-          }
-        });
-        tbody.appendChild(row);
-      });
-    })
-    .catch(err => console.error("Error loading bookings:", err));
-}
-// Edit Booking
-function editBooking(id) {
-  fetch(`/api/bookings/${id}`)
-    .then(res => res.json())
-    .then(booking => {
-      document.getElementById("editBookingID").value = booking.BookingID;
-      document.getElementById("editEndDate").value = booking.EndTime.slice(0, 16);
-      document.getElementById("editStatus").value = booking.BookingStat;
-
-      const modal = new bootstrap.Modal(document.getElementById("editBookingModal"));
-      modal.show();
+document.addEventListener("DOMContentLoaded", function() {
+  async function loadBookings() {
+    const res = await fetch('http://localhost:3000/api/bookings');
+    const bookings = await res.json();
+    const tbody = document.getElementById('booking-table-body');
+    tbody.innerHTML = '';
+    bookings.forEach(b => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${b.FirstName} ${b.LastName}</td>
+        <td>${b.StartTime}</td>
+        <td>${b.EndTime}</td>
+        <td><span class="badge ${statusColor(b.BookingStat)}">${b.BookingStat}</span></td>
+        <td>
+          <span class="badge ${paymentColor(b.PayStat)}">${b.PayStat}</span>
+          <button class="btn btn-sm btn-outline-primary ms-1" onclick="editPaymentStatus(${b.BookingID},'${b.PayStat}')">Edit</button>
+        </td>
+        <td>
+          <button class="btn btn-info btn-sm" onclick="showBookingDetails(${b.BookingID})">Details</button>
+          <button class="btn btn-warning btn-sm" onclick="editBooking(${b.BookingID})">Edit</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
     });
-}
+  }
 
-document.getElementById("editBookingForm").addEventListener("submit", function (e) {
-  e.preventDefault();
+  window.statusColor = function(stat) {
+    return stat === 'CONFIRMED' ? 'bg-success' :
+           stat === 'CANCELLED' ? 'bg-danger'  :
+           stat === 'COMPLETED' ? 'bg-info'    :
+           'bg-warning';
+  }
 
-  const id = document.getElementById("editBookingID").value;
-  const updatedData = {
-    EndTime: document.getElementById("editEndDate").value,
-    BookingStat: document.getElementById("editStatus").value
+  window.paymentColor = function(stat) {
+    return stat === 'Paid' ? 'bg-success text-light' :
+           stat === 'Refunded' ? 'bg-info text-dark' :
+           stat === 'Pending' ? 'bg-warning text-dark' :
+           'bg-secondary';
+  }
+
+  // Show booking details in modal
+  window.showBookingDetails = async function(bookingId) {
+    const res = await fetch(`http://localhost:3000/api/bookings/${bookingId}`);
+    const b = await res.json();
+    document.getElementById('booking-details-content').innerHTML = `
+      <ul>
+        <li><strong>Name:</strong> ${b.FirstName} ${b.LastName}</li>
+        <li><strong>Email:</strong> ${b.Email}</li>
+        <li><strong>Phone:</strong> ${b.Phone}</li>
+        <li><strong>Slot:</strong> ${b.SlotID}</li>
+        <li><strong>Status:</strong> ${b.BookingStat}</li>
+        <li><strong>Payment:</strong> ${b.PayStat}</li>
+        <li><strong>Payment Method:</strong> ${b.PayMethod}</li>
+        <li><strong>Cost:</strong> ${b.TotalCost} VND</li>
+      </ul>
+    `;
+    new bootstrap.Modal(document.getElementById('bookingDetailsModal')).show();
   };
 
-  fetch(`/api/bookings/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updatedData)
-  })
-    .then(res => res.json())
-    .then(() => {
-      loadBookings();
-      bootstrap.Modal.getInstance(document.getElementById("editBookingModal")).hide();
-    });
-});
-// Delete Booking
-function deleteBooking(id) {
-  if (confirm("Are you sure you want to delete this booking?")) {
-    fetch(`/api/bookings/${id}`, { method: "DELETE" })
+  // Edit booking modal
+  window.editBooking = function(bookingId) {
+    // Fetch current booking, show modal, fill values
+    fetch(`http://localhost:3000/api/bookings/${bookingId}`)
       .then(res => res.json())
-      .then(() => loadBookings());
-  }
-}
+      .then(b => {
+        document.getElementById('editBookingID').value = b.BookingID;
+        document.getElementById('editEndDate').value = new Date(b.EndTime).toISOString().slice(0,-1);
+        document.getElementById('editStatus').value = b.BookingStat;
+        new bootstrap.Modal(document.getElementById('editBookingModal')).show();
+      });
+  };
 
+  document.getElementById('editBookingForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const BookingID = document.getElementById('editBookingID').value;
+    const EndTime = document.getElementById('editEndDate').value;
+    const BookingStat = document.getElementById('editStatus').value;
+    const res = await fetch(`http://localhost:3000/api/bookings/${BookingID}`, {
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({EndTime, BookingStat})
+    });
+    if(res.ok) {
+      alert("Booking updated");
+      loadBookings();
+      bootstrap.Modal.getInstance(document.getElementById('editBookingModal')).hide();
+    }
+  };
 
-// Show Details
-function showBookingDetails(booking) {
-  const modalBody = document.getElementById("booking-details-content");
-  modalBody.innerHTML = `
-    <div class="row">
-      <div class="col-md-6">
-        <p><strong>User:</strong> ${booking.FirstName} ${booking.LastName}</p>
-        <p><strong>Email:</strong> ${booking.Email}</p>
-        <p><strong>Phone:</strong> ${booking.Phone}</p>
-        <p><strong>Address:</strong> ${booking.UserAddress}</p>
-      </div>
-      <div class="col-md-6">
-        <p><strong>Slot Number:</strong> ${booking.SlotNumber}</p>
-        <p><strong>Start Time:</strong> ${new Date(booking.StartTime).toLocaleString()}</p>
-        <p><strong>End Time:</strong> ${new Date(booking.EndTime).toLocaleString()}</p>
-        <p><strong>Status:</strong> <span class="badge bg-primary">${booking.BookingStat}</span></p>
-      </div>
-    </div>
-  `;
+  // Inline pay status editor
+  window.editPaymentStatus = function(bookingId, currentStatus) {
+    const newStatus = prompt("Set new payment status: Paid, Unpaid, Refunded, Pending", currentStatus);
+    if(newStatus && ['Paid','Unpaid','Refunded','Pending'].includes(newStatus)) {
+      fetch(`http://localhost:3000/api/bookings/${bookingId}/payment`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ PayStat: newStatus })
+      }).then(res => {
+        if(res.ok) loadBookings();
+        else alert("Failed to update payment status");
+      });
+    }
+  };
 
-  const modal = new bootstrap.Modal(document.getElementById("bookingDetailsModal"));
-  modal.show();
-}
-
+  // Initial load
+  loadBookings();
+});
 </script>
 
   <!--  -->

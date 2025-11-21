@@ -27,3 +27,36 @@ VALUES (1, 'A1', 'available'),
        (1, 'A10', 'available'),
        (1, 'A11', 'available'),
        (1, 'A12', 'available');
+-- Booking test
+INSERT INTO Booking (
+    UserID,
+    AreaID,
+    SlotID,
+    FirstName,
+    LastName,
+    Email,
+    Phone,
+    UserAddress,
+    StartTime,
+    EndTime,
+    BookingStat
+) VALUES (
+    3,                 -- UserID (existing user)
+    1,                 -- AreaID (existing parking area)
+    5,                 -- SlotID (existing slot)
+    'Lisa',            -- FirstName
+    'Tran',            -- LastName
+    'lisa.tran@email.com',  -- Email
+    '0912345678',      -- Phone
+    '12 Main St, Hanoi',    -- UserAddress
+    '2025-11-22 08:30:00',  -- StartTime (YYYY-MM-DD HH:MM:SS)
+    '2025-11-22 10:30:00',  -- EndTime   (YYYY-MM-DD HH:MM:SS)
+    'CONFIRMED'             -- BookingStat (can be PENDING, CONFIRMED, CANCELLED, COMPLETED)
+);
+-- Insert a test vehicle
+ INSERT INTO vehicles (VehID, UserID, VehType, PlateNum)
+VALUES ('1', '1', 'Car', '12345A3');
+
+
+
+SELECT SlotID, SlotLocation FROM ParkingSlot;

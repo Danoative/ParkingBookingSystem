@@ -84,41 +84,76 @@ app.post('/api/slot/:slotId/unbook', async (req, res) => {
   }
 });
 
-// Example booking system (add a booking record, you should create relevant Booking table and logic)
+// Test Booking 
+
 app.post('/api/booking', async (req, res) => {
+  const bookingData = req.body;
+  bookingData.UserID = 1;
+  bookingData.AreaID = 1;
+  bookingData.SlotID = 1;
+  bookingData.VehicleID = 1;
   const {
     UserID,
     AreaID,
     SlotID,
-    FullName,
+    VehicleID, // Vehicle to assign to the slot
+    FirstName,
+    LastName,
     Email,
     Phone,
     UserAddress,
     StartTime,
     EndTime,
-    VehicleID // Add this for correct reference
+    TotalCost, // Pass from frontend, or calculate before booking/payment
+    PayMethod // e.g. 'Online Banking', 'Credit Card', 'Pay In Cash'
   } = req.body;
 
+  // Default status fields
+  const BookingStat = 'PENDING';
+  const PayStat = 'Unpaid';
+
+  // MySQL transaction for atomicity
+  const conn = await pool.getConnection();
   try {
-    await pool.query(
+    await conn.beginTransaction();
+
+    // 1. Insert booking
+    const [bookingResult] = await conn.query(
       `INSERT INTO Booking
-      (UserID, AreaID, SlotID, FullName, Email, Phone, UserAddress, StartTime, EndTime, VehicleID)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [UserID, AreaID, SlotID, FullName, Email, Phone, UserAddress, StartTime, EndTime, VehicleID]
+      (UserID, AreaID, SlotID, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime, BookingStat)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [UserID, AreaID, SlotID, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime, BookingStat]
     );
-    // Also update the slot to book it
-    await pool.query(
+    const BookingID = bookingResult.insertId; // Get inserted booking ID
+
+    // 2. Update parking slot CurrentVehID and status
+    await conn.query(
       "UPDATE ParkingSlot SET CurrentVehID = ?, SlotStatus = 'not available' WHERE SlotID = ?",
       [VehicleID, SlotID]
     );
-    res.json({ success: true, message: "Booking successfully created." });
+
+    // 3. Insert payment record
+    await conn.query(
+      `INSERT INTO Payment
+      (UserID, BookingID, TotalCost, PayStat, PayMethod)
+      VALUES (?, ?, ?, ?, ?)`,
+      [UserID, BookingID, TotalCost, PayStat, PayMethod]
+    );
+
+    await conn.commit();
+    conn.release();
+
+    res.json({ success: true, BookingID, message: "Booking and payment registered, awaiting payment." });
   } catch (err) {
+    await conn.rollback();
+    conn.release();
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // Test users table
 app.get('/api/users', async (req, res) => {
-  const [rows] = await pool.query('SELECT UserID, Username, PassWordHash, Email, Address, Role FROM Users');
+  const [rows] = await pool.query('SELECT UserID, Username, PasswordHash, Email, Address, Role FROM Users');
   res.json(rows);
 });
 
@@ -150,6 +185,64 @@ app.delete('/api/users/:id', async (req, res) => {
   await pool.query('DELETE FROM Users WHERE UserID=?', [req.params.id]);
   res.json({ success: true });
 });
+
+
+
+// Bookin Section (Admin Dashboard)
+// Get all bookings with joined payment info
+app.get('/api/bookings', async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT b.*, p.PayStat, p.PayMethod, p.TotalCost
+    FROM Booking b
+    LEFT JOIN Payment p ON b.BookingID = p.BookingID
+    ORDER BY b.BookingID DESC
+  `);
+  res.json(rows);
+});
+
+// Get one booking detail
+app.get('/api/bookings/:id', async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT b.*, p.PayStat, p.PayMethod, p.TotalCost
+    FROM Booking b
+    LEFT JOIN Payment p ON b.BookingID = p.BookingID
+    WHERE b.BookingID = ?
+  `, [req.params.id]);
+  res.json(rows[0] || {});
+});
+
+// Edit booking status/endTime
+app.put('/api/bookings/:id', async (req, res) => {
+  const { EndTime, BookingStat } = req.body;
+  await pool.query(`UPDATE Booking SET EndTime = ?, BookingStat = ? WHERE BookingID = ?`, [EndTime, BookingStat, req.params.id]);
+  res.json({success:true});
+});
+
+// Admin updates payment status
+app.put('/api/bookings/:id/payment', async (req, res) => {
+  const { PayStat } = req.body;
+  // Update Payment table
+  await pool.query(`UPDATE Payment SET PayStat=? WHERE BookingID=?`, [PayStat, req.params.id]);
+  // If Paid, occupy slot
+  if(PayStat === 'Paid') {
+    // Assuming you want to occupy slot as well:
+    const [rows] = await pool.query('SELECT SlotID, VehicleID FROM Booking WHERE BookingID=?', [req.params.id]);
+    if(rows.length) {
+      const { SlotID, VehicleID } = rows[0];
+      await pool.query("UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?", [VehicleID || 1, SlotID]);
+    }
+  }
+  res.json({success:true});
+});
+
+
+
+
+
+
+
+
+
 // 
 
 // DB test endpoints remain the same

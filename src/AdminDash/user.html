@@ -288,10 +288,10 @@ function renderUserList() {
     row.innerHTML = `
       <div class="user-col">${username}</div>
       <div class="user-col">${email}</div>
-      <div class="user-col">${address}</div>
             <div class="user-col">
         <span class="badge ${role === 'ADMIN' ? 'bg-primary' : 'bg-purple'}">${role}</span>
       </div>
+      <div class="user-col">${address}</div>
       <div class="user-col">
         <button class="btn btn-sm btn-warning editBtn">Edit</button>
         <button class="btn btn-sm btn-danger removeBtn">Remove</button>
