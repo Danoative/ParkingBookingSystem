@@ -150,14 +150,26 @@
       <h5 class="card-title fw-semibold mb-4">Users</h5>
       <div class="card mb-0">
         <div class="card-body p-4">
-          <div class="d-flex gap-2 mb-3">
-            <input id="newUsername" class="form-control" placeholder="Username">
-            <select id="newRole" class="form-select" style="max-width:160px">
-              <option value="customer">Customer</option>
-              <option value="admin">Admin</option>
-            </select>
-            <button id="addBtn" class="btn btn-primary">Add User</button>
-          </div>
+          <div class="input-group mb-3">
+          <input type="text" id="searchUserName" class="form-control" placeholder="Filter by username">
+
+            <select id="filterUserRole" class="form-select" style="max-width:160px">
+            <option value="">All Roles</option>
+            <option value="CUSTOMER">Customer</option>
+            <option value="ADMIN">Admin</option>
+            <option value="MANAGER">Manager</option>
+          </select>
+          <button id="addBtn" class="btn btn-primary">Add User</button>
+        </div>
+
+        <!-- <div class="d-flex align-items-center px-2 py-2 fw-bold bg-light" style="gap: 24px;">
+          <span style="min-width:110px;max-width:160px;">Username</span>
+          <span style="min-width:150px;max-width:220px;">Email</span>
+          <span style="min-width:90px;max-width:110px;">Role</span>
+          <span style="min-width:160px;max-width:220px;">Address</span>
+          <span style="min-width:100px;">Action</span>
+        </div> -->
+
           <div class="list-group" id="usersList"></div>
           <div id="usersError" class="alert alert-danger mt-3 d-none" role="alert">
             Failed to load users.
@@ -166,6 +178,50 @@
       </div>
     </div>
   </div>
+<!-- User Modal -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="userForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userModalLabel">Add/Edit User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="userIdField">
+        <div class="mb-2">
+          <label for="usernameField" class="form-label">Username</label>
+          <input id="usernameField" class="form-control" required maxlength="20">
+        </div>
+        <div class="mb-2">
+          <label for="emailField" class="form-label">Email</label>
+          <input id="emailField" type="email" class="form-control" required maxlength="100">
+        </div>
+        <div class="mb-2">
+          <label for="passField" class="form-label">Password</label>
+          <input id="passField" type="password" class="form-control" maxlength="255" autocomplete="new-password">
+        </div>
+        <div class="mb-2">
+          <label for="addressField" class="form-label">Address</label>
+          <input id="addressField" class="form-control" required maxlength="255">
+        </div>
+        <div class="mb-2">
+          <label for="roleField" class="form-label">Role</label>
+          <select id="roleField" class="form-select">
+            <option value="CUSTOMER">Customer</option>
+            <option value="ADMIN">Admin</option>
+            <option value="MANAGER">Manager</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" id="modalSaveBtn" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
 </div>
   </div>
   <script src="../assets/libs/jquery/dist/jquery.min.js"></script>
@@ -176,107 +232,118 @@
   <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
 
 <script>
-// Utility for showing/hiding errors
-function showError(msg) {
-  const errBox = document.getElementById('usersError');
-  errBox.textContent = msg;
-  errBox.classList.remove('d-none');
-}
-function hideError() {
-  document.getElementById('usersError').classList.add('d-none');
-}
+let allUsers = [];
 
-// Load current users and render
+// Load all users from backend
 async function loadUsers() {
-  try {
-    hideError();
-    const res = await fetch('http://localhost:3000/api/users');
-    if (!res.ok) throw new Error('Failed to load');
-    const users = await res.json();
-
-    const usersList = document.getElementById('usersList');
-    usersList.innerHTML = '';
-    users.forEach(renderUserItem);
-  } catch (err) {
-    showError('Failed to load users.');
-  }
+  const res = await fetch('http://localhost:3000/api/users');
+  allUsers = await res.json();
+  renderUserList();
 }
 
-// Render a single user row/card
-function renderUserItem(user) {
-  const li = document.createElement('div');
-  li.className = "list-group-item d-flex gap-3 align-items-center";
-  li.innerHTML = `
-    <span class="fw-semibold" style="min-width:100px">${user.Username}</span>
-    <span class="text-muted" style="min-width:160px">${user.Email}</span>
-    <span class="badge bg-info" style="min-width:90px">${user.Role}</span>
-    <span class="text-muted" style="min-width:160px">${user.Address}</span>
-    <button class="btn btn-sm btn-warning editBtn me-1">Edit</button>
-    <button class="btn btn-sm btn-danger removeBtn">Remove</button>
+function renderUserList() {
+  const search = document.getElementById("searchUserName").value.toLowerCase();
+  const role = document.getElementById("filterUserRole").value;
+  const usersList = document.getElementById('usersList');
+  usersList.innerHTML = '';
+
+  // Table header
+  const header = document.createElement('div');
+  header.className = "d-flex align-items-center fw-bold px-2 py-2 bg-light mb-1";
+  header.innerHTML = `
+    <span style="min-width:110px;max-width:160px;">Username</span>
+    <span style="min-width:150px;max-width:220px;">Email</span>
+    <span style="min-width:90px;max-width:110px;">Role</span>
+    <span style="min-width:160px;max-width:220px;">Address</span>
+    <span style="min-width:130px;text-align:right;">Actions</span>
   `;
-  // Edit user
-  li.querySelector('.editBtn').onclick = () => showEditUserModal(user);
-  // Remove user
-  li.querySelector('.removeBtn').onclick = async () => {
-    if (confirm(`Are you sure you want to remove ${user.Username}?`)) {
-      const res = await fetch(`http://localhost:3000/api/users/${user.UserID}`, { method: 'DELETE' });
-      await loadUsers();
-    }
-  };
-  document.getElementById('usersList').appendChild(li);
+  usersList.appendChild(header);
+
+  allUsers
+    .filter(u => (u.Username.toLowerCase().includes(search) || !search) && (u.Role === role || !role))
+    .forEach(user => {
+      const li = document.createElement('div');
+      li.className = "list-group-item d-flex align-items-center justify-content-between py-2";
+
+      li.innerHTML = `
+        <div class="d-flex align-items-center flex-grow-1" style="gap: 24px;">
+          <span class="fw-semibold" style="min-width:110px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${user.Username}</span>
+          <span class="text-muted" style="min-width:150px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${user.Email}</span>
+          <span class="badge ${user.Role === 'ADMIN' ? 'bg-primary' : 'bg-purple'}" style="min-width:90px;max-width:110px;text-align:center;">${user.Role}</span>
+          <span class="text-muted" style="min-width:160px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${user.Address}</span>
+        </div>
+        <div class="d-flex align-items-center justify-content-end" style="min-width:130px;gap: 6px;">
+          <button class="btn btn-sm btn-warning editBtn">Edit</button>
+          <button class="btn btn-sm btn-danger removeBtn">Remove</button>
+        </div>
+      `;
+      li.querySelector('.editBtn').onclick = () => showUserModal('edit', user);
+      li.querySelector('.removeBtn').onclick = async () => {
+        if (confirm(`Are you sure you want to remove ${user.Username}?`)) {
+          await fetch(`http://localhost:3000/api/users/${user.UserID}`, { method: 'DELETE' });
+          loadUsers();
+        }
+      };
+      usersList.appendChild(li);
+    });
 }
 
-// Add new user
-document.getElementById('addBtn').onclick = async () => {
-  hideError();
-  const Username = document.getElementById('newUsername').value.trim();
-  const Role = document.getElementById('newRole').value.toUpperCase();
-  // Prompt details
-  const Email = prompt("User email?");
-  const Password = prompt("Password (will be encrypted):");
-  const Address = prompt("User address?");
-  if (!Username || !Email || !Password || !Address) {
-    showError('All fields must be filled.');
-    return;
-  }
-  const res = await fetch('http://localhost:3000/api/users', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ Username, Email, Password, Address, Role })
-  });
-  if (res.ok) await loadUsers();
-  else showError('Failed to add user.');
-};
+// Show add/edit modal, populate fields, handle save
+function showUserModal(mode, user = {}) {
+  document.getElementById('userIdField').value = user.UserID || '';
+  document.getElementById('usernameField').value = user.Username || '';
+  document.getElementById('emailField').value = user.Email || '';
+  document.getElementById('passField').value = '';
+  document.getElementById('addressField').value = user.Address || '';
+  document.getElementById('roleField').value = user.Role || 'CUSTOMER';
 
-// Show Edit dialog
-function showEditUserModal(user) {
-  const Username = prompt("Edit username:", user.Username);
-  const Email = prompt("Edit email:", user.Email);
-  const Address = prompt("Edit address:", user.Address);
-  const Role = prompt("Edit role (CUSTOMER, ADMIN, MANAGER):", user.Role);
-  const Password = prompt("Set new password (leave blank to keep):");
+  document.getElementById('userModalLabel').textContent = mode === 'add' ? 'Add User' : 'Edit User';
 
-  if (!Username || !Email || !Address || !Role) {
-    showError('All fields must be filled for edit.');
-    return;
-  }
-  // Only send Password if changed
+  let modal = new bootstrap.Modal(document.getElementById('userModal'), {});
+  modal.show();
+}
+
+// Handle save from modal
+document.getElementById('userForm').onsubmit = async function(e) {
+  e.preventDefault();
+  const id = document.getElementById('userIdField').value;
+  const Username = document.getElementById('usernameField').value.trim();
+  const Email = document.getElementById('emailField').value.trim();
+  const Password = document.getElementById('passField').value;
+  const Address = document.getElementById('addressField').value.trim();
+  const Role = document.getElementById('roleField').value;
   let payload = { Username, Email, Address, Role };
   if (Password) payload.Password = Password;
 
-  fetch(`http://localhost:3000/api/users/${user.UserID}`, {
-    method: 'PUT',
+  let url, method;
+  if (id) {
+    url = `http://localhost:3000/api/users/${id}`;
+    method = "PUT";
+  } else {
+    url = 'http://localhost:3000/api/users';
+    method = "POST";
+  }
+  const res = await fetch(url, {
+    method: method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
-  }).then(res => {
-    if (res.ok) loadUsers();
-    else showError('Failed to update user.');
   });
-}
+  if(res.ok) {
+    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+    loadUsers();
+  } else {
+    alert('Save failed!');
+  }
+};
 
-// Initial load
+// "Add User" button shows modal in add mode
+document.getElementById('addBtn').onclick = () => showUserModal('add');
+
+// Filter controls
+document.getElementById("searchUserName").oninput =
+document.getElementById("filterUserRole").onchange = renderUserList;
+
 window.addEventListener('DOMContentLoaded', loadUsers);
-</script>
 </script>
 
 

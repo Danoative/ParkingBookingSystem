@@ -116,7 +116,41 @@ app.post('/api/booking', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// Test users table
+app.get('/api/users', async (req, res) => {
+  const [rows] = await pool.query('SELECT UserID, Username, PassWordHash, Email, Address, Role FROM Users');
+  res.json(rows);
+});
 
+// API for Users Section
+app.post('/api/users', async (req, res) => {
+  const { Username, Email, Password, Address, Role } = req.body;
+  const hash = await bcrypt.hash(Password, 10);
+  await pool.query('INSERT INTO Users (Username, Email, PasswordHash, Address, Role) VALUES (?, ?, ?, ?, ?)',
+    [Username, Email, hash, Address, Role]);
+  res.status(201).json({ success: true });
+});
+
+app.put('/api/users/:id', async (req, res) => {
+  const { Username, Email, Address, Role, Password } = req.body;
+  let query = 'UPDATE Users SET Username=?, Email=?, Address=?, Role=?';
+  let params = [Username, Email, Address, Role, req.params.id];
+  if (Password) {
+    const hash = await bcrypt.hash(Password, 10);
+    query = 'UPDATE Users SET Username=?, Email=?, Address=?, Role=?, PasswordHash=? WHERE UserID=?';
+    params = [Username, Email, Address, Role, hash, req.params.id];
+  } else {
+    query += ' WHERE UserID=?';
+  }
+  await pool.query(query, params);
+  res.json({ success: true });
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+  await pool.query('DELETE FROM Users WHERE UserID=?', [req.params.id]);
+  res.json({ success: true });
+});
+// 
 
 // DB test endpoints remain the same
 app.get('/api/test-db', async (req, res) => {
