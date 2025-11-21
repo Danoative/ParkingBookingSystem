@@ -8,6 +8,7 @@
   <link rel="shortcut icon" type="image/png" href="../assets/images/logos/seodashlogo.png" />
   
   <link rel="stylesheet" href="../assets/css/styles.min.css" />
+  <link rel="stylesheet" href="../assets/css/userSection.css" />
 </head>
 
 <body>
@@ -241,51 +242,71 @@ async function loadUsers() {
   renderUserList();
 }
 
+// Convert users into array of arrays for easy processing/display
+const usersMatrix = allUsers.map(user => [
+  user.Username,
+  user.Email,
+  user.Role,
+  user.Address,
+  user.UserID // For actions: Edit/Remove
+]);
+
+
 function renderUserList() {
   const search = document.getElementById("searchUserName").value.toLowerCase();
   const role = document.getElementById("filterUserRole").value;
   const usersList = document.getElementById('usersList');
   usersList.innerHTML = '';
 
-  // Table header
+  // Table header as spreadsheet
+  const headerRow = ['Username', 'Email', 'Role', 'Address', 'Actions'];
   const header = document.createElement('div');
-  header.className = "d-flex align-items-center fw-bold px-2 py-2 bg-light mb-1";
-  header.innerHTML = `
-    <span style="min-width:110px;max-width:160px;">Username</span>
-    <span style="min-width:150px;max-width:220px;">Email</span>
-    <span style="min-width:90px;max-width:110px;">Role</span>
-    <span style="min-width:160px;max-width:220px;">Address</span>
-    <span style="min-width:130px;text-align:right;">Actions</span>
-  `;
+  header.className = "user-table-row user-table-header";
+  header.style.display = "flex";
+  header.innerHTML = headerRow.map(head => 
+    `<div class="user-col">${head}</div>`
+  ).join('');
   usersList.appendChild(header);
 
-  allUsers
+  // Process users to Array of Arrays (rows)
+  const filtered = allUsers
     .filter(u => (u.Username.toLowerCase().includes(search) || !search) && (u.Role === role || !role))
-    .forEach(user => {
-      const li = document.createElement('div');
-      li.className = "list-group-item d-flex align-items-center justify-content-between py-2";
+    .map(u => [
+      u.Username,
+      u.Email,
+      u.Role,
+      u.Address,
+      u.UserID
+    ]);
 
-      li.innerHTML = `
-        <div class="d-flex align-items-center flex-grow-1" style="gap: 24px;">
-          <span class="fw-semibold" style="min-width:110px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${user.Username}</span>
-          <span class="text-muted" style="min-width:150px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${user.Email}</span>
-          <span class="badge ${user.Role === 'ADMIN' ? 'bg-primary' : 'bg-purple'}" style="min-width:90px;max-width:110px;text-align:center;">${user.Role}</span>
-          <span class="text-muted" style="min-width:160px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${user.Address}</span>
-        </div>
-        <div class="d-flex align-items-center justify-content-end" style="min-width:130px;gap: 6px;">
-          <button class="btn btn-sm btn-warning editBtn">Edit</button>
-          <button class="btn btn-sm btn-danger removeBtn">Remove</button>
-        </div>
-      `;
-      li.querySelector('.editBtn').onclick = () => showUserModal('edit', user);
-      li.querySelector('.removeBtn').onclick = async () => {
-        if (confirm(`Are you sure you want to remove ${user.Username}?`)) {
-          await fetch(`http://localhost:3000/api/users/${user.UserID}`, { method: 'DELETE' });
-          loadUsers();
-        }
-      };
-      usersList.appendChild(li);
-    });
+  // Render each row
+  filtered.forEach(rowArr => {
+    const [username, email, role, address, userID] = rowArr;
+    const row = document.createElement('div');
+    row.className = "user-table-row";
+    row.style.display = "flex";
+    row.innerHTML = `
+      <div class="user-col">${username}</div>
+      <div class="user-col">${email}</div>
+      <div class="user-col">${address}</div>
+            <div class="user-col">
+        <span class="badge ${role === 'ADMIN' ? 'bg-primary' : 'bg-purple'}">${role}</span>
+      </div>
+      <div class="user-col">
+        <button class="btn btn-sm btn-warning editBtn">Edit</button>
+        <button class="btn btn-sm btn-danger removeBtn">Remove</button>
+      </div>
+    `;
+    // Add button actions
+    row.querySelector('.editBtn').onclick = () => showUserModal('edit', { Username: username, Email: email, Role: role, Address: address, UserID: userID });
+    row.querySelector('.removeBtn').onclick = async () => {
+      if (confirm(`Are you sure you want to remove ${username}?`)) {
+        await fetch(`http://localhost:3000/api/users/${userID}`, { method: 'DELETE' });
+        loadUsers();
+      }
+    };
+    usersList.appendChild(row);
+  });
 }
 
 // Show add/edit modal, populate fields, handle save
