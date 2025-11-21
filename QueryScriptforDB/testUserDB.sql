@@ -9,9 +9,9 @@ VALUES ('admin','admin@example.com',
         '$2a$10$1f2g3h4i5j6k7l8m9n0oOuQf2g6Qe5SxG3nQ2hVQkD7y1lQh1E7iG', -- example only; replace with real hash
         '123 Test Street','Admin');
         
--- Insert into parkingslot
+-- Insert into ParkingArea
 INSERT INTO ParkingAreas (ParkName, ParkingLocation, TotalSlots, AvailableSlots, PricePerHour)
-VALUES ('My Park', 'Downtown Center', 12, 12, 3.00);
+VALUES ('My Park', 'Downtown Center', 12, 12, 5000);
 
 -- Assume AreaID = 1 and SlotNum runs 1-12
 INSERT INTO ParkingSlot (AreaID, SlotLocation, SlotStatus)
