@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard - Users</title>
+  <link rel="shortcut icon" type="image/png" href="../assets/images/logos/seodashlogo.png" />
+  
+  <link rel="stylesheet" href="../assets/css/styles.min.css" />
+</head>
+
+<body>
+  <!--  Body Wrapper -->
+  <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+    data-sidebar-position="fixed" data-header-position="fixed">
+    <!-- Sidebar Start -->
+    <aside class="left-sidebar">
+      <!-- Sidebar scroll-->
+      <div>
+        <div class="brand-logo d-flex align-items-center justify-content-between">
+          <a href="./index.html" class="text-nowrap logo-img">
+            <img src="../assets/images/logos/logo-light.svg" alt="" />
+          </a>
+          <div class="close-btn d-xl-none d-block sidebartoggler cursor-pointer" id="sidebarCollapse">
+            <i class="ti ti-x fs-8"></i>
+          </div>
+        </div>
+        <!-- Sidebar navigation-->
+        <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
+          <ul id="sidebarnav">
+            <li class="nav-small-cap">
+              <i class="ti ti-dots nav-small-cap-icon fs-6"></i>
+              <span class="hide-menu">Home</span>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./index.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:home-smile-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Main</span>
+              </a>
+            </li>
+            <li class="nav-small-cap">
+              <i class="ti ti-dots nav-small-cap-icon fs-6"></i>
+              <span class="hide-menu">Information</span>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./parkingslot.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:layers-minimalistic-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Parking Slot</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./user.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:danger-circle-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">User</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./Booking.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:bookmark-square-minimalistic-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Booking</span>
+              </a>
+            </li>
+
+            <!-- <li class="sidebar-item">
+              <a class="sidebar-link" href="./ui-forms.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:file-text-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Forms</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./ui-typography.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:text-field-focus-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Typography</span>
+              </a>
+            </li> -->
+
+            <li class="nav-small-cap">
+              <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-6" class="fs-6"></iconify-icon>
+              <span class="hide-menu">AUTH</span>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./authentication-login.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:login-3-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Login</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./authentication-register.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:user-plus-rounded-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Register</span>
+              </a>
+            </li>
+            <li class="nav-small-cap">
+              <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4" class="fs-6"></iconify-icon>
+              
+              <!-- <span class="hide-menu">EXTRA</span>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./icon-tabler.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:sticker-smile-circle-2-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Icons</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./sample-page.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:planet-3-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Sample Page</span>
+              </a>
+            </li> -->
+          </ul>
+          
+        </nav>
+        <!-- End Sidebar navigation -->
+      </div>
+      <!-- End Sidebar scroll-->
+    </aside>
+    <!--  Sidebar End -->
+    <!--  Main wrapper -->
+    <div class="body-wrapper">
+      <!--  Header Start -->
+      <header class="app-header">
+        <nav class="navbar navbar-expand-lg navbar-light">
+          <ul class="navbar-nav">
+            <li class="nav-item d-block d-xl-none">
+              <a class="nav-link sidebartoggler nav-icon-hover" id="headerCollapse" href="javascript:void(0)">
+                <i class="ti ti-menu-2"></i>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link nav-icon-hover" href="javascript:void(0)">
+                <i class="ti ti-bell-ringing"></i>
+                <div class="notification bg-primary rounded-circle"></div>
+              </a>
+            </li>
+          </ul>
+          <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
+            <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">
+              
+                
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </header>
+      <!--  Header End -->
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title fw-semibold mb-4">Users</h5>
+      <div class="card mb-0">
+        <div class="card-body p-4">
+          <div class="d-flex gap-2 mb-3">
+            <input id="newUsername" class="form-control" placeholder="Username">
+            <select id="newRole" class="form-select" style="max-width:160px">
+              <option value="customer">Customer</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button id="addBtn" class="btn btn-primary">Add User</button>
+          </div>
+          <div class="list-group" id="usersList"></div>
+          <div id="usersError" class="alert alert-danger mt-3 d-none" role="alert">
+            Failed to load users.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  </div>
+  <script src="../assets/libs/jquery/dist/jquery.min.js"></script>
+  <script src="../assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/libs/simplebar/dist/simplebar.js"></script>
+  <script src="../assets/js/sidebarmenu.js"></script>
+  <script src="../assets/js/app.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
+
+<script>
+// --- Config: derive API base path from current location, with optional override ---
+function getApiBase() {
+  // Example: https://host[:port]/app/page -> base = origin + '/'
+  // If your server mounts API under '/api', keep apiPrefix = '/api'
+  const apiPrefix = '/api';
+  const { origin } = window.location;
+  // Optional: allow a global override via <meta name="api-base" content="https://api.example.com/api">
+  const meta = document.querySelector('meta[name="api-base"]');
+  if (meta?.content) return meta.content.replace(/\/+$/, '');
+  return (origin + apiPrefix).replace(/\/+$/, '');
+}
+
+// Utility: JSON fetch wrapper
+async function jfetch(url, opts = {}) {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    credentials: 'include', // include cookies if your auth uses sessions
+    ...opts
+  });
+  const isJson = res.headers.get('content-type')?.includes('application/json');
+  const body = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null);
+  if (!res.ok) {
+    const msg = body?.error || body?.message || res.statusText;
+    throw new Error(msg);
+  }
+  return body;
+}
+
+// Elements
+const usersListEl = document.getElementById('usersList');
+const addBtn = document.getElementById('addBtn');
+const newUsernameEl = document.getElementById('newUsername');
+const newEmailEl = document.getElementById('newEmail');
+const newPasswordEl = document.getElementById('newPassword');
+const newRoleEl = document.getElementById('newRole');
+
+// Current admin info to prevent self-edit/delete in UI
+const root = document.body; // or a specific container
+const CURRENT_USER_ID = Number(root?.dataset?.currentUserId || '0');
+const CURRENT_USER_TABLE = String(root?.dataset?.currentUserTable || 'admin'); // 'admin' or 'users'
+
+// Render helpers
+function roleBadge(role) {
+  const isAdmin = role === 'admin';
+  const badgeClass = isAdmin ? 'bg-danger' : 'bg-secondary';
+  const label = isAdmin ? 'Admin' : 'Customer';
+  return `<span class="badge ${badgeClass} ms-2">${label}</span>`;
+}
+
+function actionButtons(row) {
+  const isSelf = CURRENT_USER_ID === row.id && CURRENT_USER_TABLE === row.table;
+  const editDisabled = isSelf ? 'disabled title="Cannot edit your own account here"' : '';
+  // Never allow delete for admin table; and also block self-delete
+  const deleteDisabled = (row.role === 'admin' || isSelf)
+    ? 'disabled title="Cannot delete admin or your own account"' : '';
+  return `
+    <div class="btn-group btn-group-sm" role="group">
+      <button class="btn btn-outline-primary" data-action="edit" data-id="${row.id}" data-table="${row.table}" ${editDisabled}>Edit</button>
+      <button class="btn btn-outline-danger" data-action="delete" data-id="${row.id}" data-table="${row.table}" ${deleteDisabled}>Delete</button>
+    </div>
+  `;
+}
+
+function rowItem(row) {
+  // row = { id, table, username, email, role }
+  return `
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+      <div class="me-3">
+        <div>
+          <span class="fw-semibold">${row.username}</span>
+          ${roleBadge(row.role)}
+        </div>
+        <div class="text-muted small">${row.email || ''}</div>
+      </div>
+      ${actionButtons(row)}
+    </div>
+  `;
+}
+
+function editModalTemplate() {
+  // Simple inline modal; replace with your Bootstrap modal if you already include it
+  if (document.getElementById('editUserModal')) return '';
+  return `
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <form class="modal-content" id="editUserForm">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit user</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="editUserId">
+            <input type="hidden" id="editUserTable">
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input class="form-control" id="editUsername" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="editEmail" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">New password (optional)</label>
+              <input type="password" class="form-control" id="editPassword" placeholder="Leave blank to keep current">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" type="submit">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+// Mount edit modal
+document.body.insertAdjacentHTML('beforeend', editModalTemplate());
+
+// Bootstrap modal instance (if Bootstrap JS loaded)
+let editModalInstance = null;
+(function initModal() {
+  const m = document.getElementById('editUserModal');
+  if (window.bootstrap && m) {
+    editModalInstance = new bootstrap.Modal(m);
+  }
+})();
+
+// Load list
+async function loadUsers() {
+  const base = getApiBase();
+  try {
+    const rows = await jfetch(`${base}/users`);
+    if (!Array.isArray(rows) || rows.length === 0) {
+      usersListEl.innerHTML = `<div class="list-group-item text-muted">No users found</div>`;
+      return;
+    }
+    usersListEl.innerHTML = rows.map(rowItem).join('');
+    bindRowActions();
+  } catch (e) {
+    usersListEl.innerHTML = `<div class="list-group-item text-danger">Failed to load users: ${e.message}</div>`;
+  }
+}
+
+// Bind row action buttons
+function bindRowActions() {
+  usersListEl.querySelectorAll('button[data-action]').forEach(btn => {
+    const action = btn.getAttribute('data-action');
+    const id = Number(btn.getAttribute('data-id'));
+    const table = btn.getAttribute('data-table');
+    if (action === 'delete') {
+      btn.addEventListener('click', () => onDelete(table, id));
+    } else if (action === 'edit') {
+      btn.addEventListener('click', () => onEditOpen(table, id));
+    }
+  });
+}
+
+// Create user
+async function onAdd() {
+  const username = newUsernameEl?.value?.trim();
+  const email = newEmailEl?.value?.trim();
+  const password = newPasswordEl?.value || '';
+  const role = newRoleEl?.value || 'customer';
+
+  if (!username || !email || !password) {
+    alert('Username, email, and password are required');
+    return;
+  }
+
+  const base = getApiBase();
+  try {
+    await jfetch(`${base}/users`, {
+      method: 'POST',
+      body: JSON.stringify({ username, email, password, role })
+    });
+    if (newUsernameEl) newUsernameEl.value = '';
+    if (newEmailEl) newEmailEl.value = '';
+    if (newPasswordEl) newPasswordEl.value = '';
+    await loadUsers();
+  } catch (e) {
+    alert(`Failed to add user: ${e.message}`);
+  }
+}
+
+// Edit open
+async function onEditOpen(table, id) {
+  // Prevent edit if self (should already be disabled)
+  if (CURRENT_USER_TABLE === table && CURRENT_USER_ID === id) {
+    return alert('Cannot edit your own account here');
+  }
+  // Fetch current row from the list DOM (simple approach)
+  const item = [...usersListEl.querySelectorAll('.list-group-item')].find(div =>
+    div.querySelector(`button[data-id="${id}"][data-table="${table}"]`)
+  );
+  // Extract displayed values (or refetch from API if you prefer)
+  const nameText = item?.querySelector('.fw-semibold')?.textContent?.trim() || '';
+  const emailText = item?.querySelector('.text-muted')?.textContent?.trim() || '';
+
+  document.getElementById('editUserId').value = String(id);
+  document.getElementById('editUserTable').value = table;
+  document.getElementById('editUsername').value = nameText;
+  document.getElementById('editEmail').value = emailText;
+  document.getElementById('editPassword').value = '';
+
+  if (editModalInstance) editModalInstance.show();
+  else document.getElementById('editUserModal').classList.add('show'); // fallback
+}
+
+// Edit submit
+document.getElementById('editUserForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = Number(document.getElementById('editUserId').value);
+  const table = document.getElementById('editUserTable').value;
+  const username = document.getElementById('editUsername').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const password = document.getElementById('editPassword').value;
+
+  const payload = {};
+  if (username) payload.username = username;
+  if (email) payload.email = email;
+  if (password) payload.password = password;
+
+  const base = getApiBase();
+  try {
+    await jfetch(`${base}/users/${encodeURIComponent(table)}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    if (editModalInstance) editModalInstance.hide();
+    await loadUsers();
+  } catch (err) {
+    alert(`Failed to update user: ${err.message}`);
+  }
+});
+
+// Delete user
+async function onDelete(table, id) {
+  // Prevent self delete in UI
+  if (CURRENT_USER_TABLE === table && CURRENT_USER_ID === id) {
+    return alert('Cannot delete your own account');
+  }
+  // Never delete admins
+  if (table === 'admin') {
+    return alert('Cannot delete admin accounts');
+  }
+  if (!confirm('Delete this customer user?')) return;
+  const base = getApiBase();
+  try {
+    await jfetch(`${base}/users/${encodeURIComponent(table)}/${id}`, { method: 'DELETE' });
+    await loadUsers();
+  } catch (e) {
+    alert(`Failed to delete user: ${e.message}`);
+  }
+}
+
+// Wire add button
+addBtn?.addEventListener('click', onAdd);
+
+// Initialize
+loadUsers();
+</script>
+</body>
+
+</html>
