@@ -232,140 +232,124 @@
   <script src="../assets/js/app.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
 
+
+  <script src="../assets/js/admin-api.js"></script>
+  <!--  -->
 <script>
 let allUsers = [];
 
-// Load all users from backend
 async function loadUsers() {
-  const res = await fetch('http://localhost:3000/api/users');
-  allUsers = await res.json();
-  renderUserList();
+  try {
+    allUsers = await apiGet('/api/users');
+    renderUserList();
+  } catch (err) {
+    console.error('Failed to load users:', err);
+    alert('Failed to load users');
+  }
 }
-
-// Convert users into array of arrays for easy processing/display
-const usersMatrix = allUsers.map(user => [
-  user.Username,
-  user.Email,
-  user.Role,
-  user.Address,
-  user.UserID // For actions: Edit/Remove
-]);
-
 
 function renderUserList() {
   const search = document.getElementById("searchUserName").value.toLowerCase();
-  const role = document.getElementById("filterUserRole").value;
+  const role   = document.getElementById("filterUserRole").value;
   const usersList = document.getElementById('usersList');
   usersList.innerHTML = '';
 
-  // Table header as spreadsheet
   const headerRow = ['Username', 'Email', 'Role', 'Address', 'Actions'];
   const header = document.createElement('div');
   header.className = "user-table-row user-table-header";
   header.style.display = "flex";
-  header.innerHTML = headerRow.map(head => 
-    `<div class="user-col">${head}</div>`
-  ).join('');
+  header.innerHTML = headerRow.map(head => `<div class="user-col">${head}</div>`).join('');
   usersList.appendChild(header);
 
-  // Process users to Array of Arrays (rows)
   const filtered = allUsers
-    .filter(u => (u.Username.toLowerCase().includes(search) || !search) && (u.Role === role || !role))
-    .map(u => [
-      u.Username,
-      u.Email,
-      u.Role,
-      u.Address,
-      u.UserID
-    ]);
+    .filter(u =>
+      (u.Username.toLowerCase().includes(search) || !search) &&
+      (u.Role === role || !role)
+    );
 
-  // Render each row
-  filtered.forEach(rowArr => {
-    const [username, email, role, address, userID] = rowArr;
+  filtered.forEach(u => {
     const row = document.createElement('div');
     row.className = "user-table-row";
     row.style.display = "flex";
     row.innerHTML = `
-      <div class="user-col">${username}</div>
-      <div class="user-col">${email}</div>
-            <div class="user-col">
-        <span class="badge ${role === 'ADMIN' ? 'bg-primary' : 'bg-purple'}">${role}</span>
+      <div class="user-col">${u.Username}</div>
+      <div class="user-col">${u.Email}</div>
+      <div class="user-col">
+        <span class="badge ${u.Role === 'ADMIN' ? 'bg-primary' : 'bg-purple'}">${u.Role}</span>
       </div>
-      <div class="user-col">${address}</div>
+      <div class="user-col">${u.Address}</div>
       <div class="user-col">
         <button class="btn btn-sm btn-warning editBtn">Edit</button>
         <button class="btn btn-sm btn-danger removeBtn">Remove</button>
       </div>
     `;
-    // Add button actions
-    row.querySelector('.editBtn').onclick = () => showUserModal('edit', { Username: username, Email: email, Role: role, Address: address, UserID: userID });
+
+    row.querySelector('.editBtn').onclick = () =>
+      showUserModal('edit', u);
+
     row.querySelector('.removeBtn').onclick = async () => {
-      if (confirm(`Are you sure you want to remove ${username}?`)) {
-        await fetch(`http://localhost:3000/api/users/${userID}`, { method: 'DELETE' });
-        loadUsers();
+      if (confirm(`Are you sure you want to remove ${u.Username}?`)) {
+        try {
+          await apiDelete(`/api/users/${u.UserID}`);
+          loadUsers();
+        } catch (err) {
+          alert('Remove failed: ' + err.message);
+        }
       }
     };
+
     usersList.appendChild(row);
   });
 }
 
-// Show add/edit modal, populate fields, handle save
 function showUserModal(mode, user = {}) {
-  document.getElementById('userIdField').value = user.UserID || '';
+  document.getElementById('userIdField').value   = user.UserID   || '';
   document.getElementById('usernameField').value = user.Username || '';
-  document.getElementById('emailField').value = user.Email || '';
-  document.getElementById('passField').value = '';
-  document.getElementById('addressField').value = user.Address || '';
-  document.getElementById('roleField').value = user.Role || 'CUSTOMER';
+  document.getElementById('emailField').value    = user.Email    || '';
+  document.getElementById('passField').value     = '';
+  document.getElementById('addressField').value  = user.Address  || '';
+  document.getElementById('roleField').value     = user.Role     || 'CUSTOMER';
 
-  document.getElementById('userModalLabel').textContent = mode === 'add' ? 'Add User' : 'Edit User';
+  document.getElementById('userModalLabel').textContent =
+    mode === 'add' ? 'Add User' : 'Edit User';
 
-  let modal = new bootstrap.Modal(document.getElementById('userModal'), {});
+  const modal = new bootstrap.Modal(document.getElementById('userModal'), {});
   modal.show();
 }
 
-// Handle save from modal
 document.getElementById('userForm').onsubmit = async function(e) {
   e.preventDefault();
-  const id = document.getElementById('userIdField').value;
+  const id       = document.getElementById('userIdField').value;
   const Username = document.getElementById('usernameField').value.trim();
-  const Email = document.getElementById('emailField').value.trim();
+  const Email    = document.getElementById('emailField').value.trim();
   const Password = document.getElementById('passField').value;
-  const Address = document.getElementById('addressField').value.trim();
-  const Role = document.getElementById('roleField').value;
-  let payload = { Username, Email, Address, Role };
+  const Address  = document.getElementById('addressField').value.trim();
+  const Role     = document.getElementById('roleField').value;
+
+  const payload = { Username, Email, Address, Role };
   if (Password) payload.Password = Password;
 
-  let url, method;
-  if (id) {
-    url = `http://localhost:3000/api/users/${id}`;
-    method = "PUT";
-  } else {
-    url = 'http://localhost:3000/api/users';
-    method = "POST";
-  }
-  const res = await fetch(url, {
-    method: method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if(res.ok) {
+  try {
+    if (id) {
+      await apiPut(`/api/users/${id}`, payload);
+    } else {
+      await apiPost('/api/users', payload);
+    }
     bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
     loadUsers();
-  } else {
-    alert('Save failed!');
+  } catch (err) {
+    alert('Save failed: ' + err.message);
   }
 };
 
-// "Add User" button shows modal in add mode
 document.getElementById('addBtn').onclick = () => showUserModal('add');
 
-// Filter controls
 document.getElementById("searchUserName").oninput =
 document.getElementById("filterUserRole").onchange = renderUserList;
 
 window.addEventListener('DOMContentLoaded', loadUsers);
 </script>
+
 
 
 </body>

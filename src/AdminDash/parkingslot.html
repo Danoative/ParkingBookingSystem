@@ -146,6 +146,8 @@
 </div>
 
 <!--  -->
+<script src="../assets/js/admin-api.js"></script>
+
 <script>
 const areaName = document.getElementById('area-name');
 const areaLocation = document.getElementById('area-location');
@@ -157,8 +159,7 @@ const slotTemplate = document.getElementById('slot-template');
 
 async function loadAreaAndSlots() {
   // Get area info
-  const areaRes = await fetch('http://localhost:3000/api/area/1');
-  const area = await areaRes.json();
+  const area = await apiGet('/api/area/1');
   areaName.textContent = area.ParkName;
   areaLocation.textContent = 'Location: ' + area.ParkingLocation;
   areaTotal.textContent = area.TotalSlots;
@@ -166,8 +167,7 @@ async function loadAreaAndSlots() {
   areaPrice.textContent = area.PricePerHour + ' VND';
 
   // Get slots info
-  const slotsRes = await fetch('http://localhost:3000/api/area/1/slots');
-  const slots = await slotsRes.json();
+  const slots = await apiGet('/api/area/1/slots');
 
   slotsGrid.innerHTML = '';
   slots.forEach(slot => {
@@ -178,6 +178,8 @@ async function loadAreaAndSlots() {
     clone.querySelector('.slot-status').textContent = slot.SlotStatus === 'available' ? 'Available' : 'Occupied';
     clone.querySelector('.slot-status').classList.add(slot.SlotStatus === 'available' ? 'bg-success' : 'bg-danger');
     slotsGrid.appendChild(clone);
+    
+    
   });
 }
 

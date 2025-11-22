@@ -222,30 +222,36 @@
   </div>
 
 <!--  -->
+<script src="../assets/js/admin-api.js"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   async function loadBookings() {
-    const res = await fetch('http://localhost:3000/api/bookings');
-    const bookings = await res.json();
-    const tbody = document.getElementById('booking-table-body');
-    tbody.innerHTML = '';
-    bookings.forEach(b => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${b.FirstName} ${b.LastName}</td>
-        <td>${b.StartTime}</td>
-        <td>${b.EndTime}</td>
-        <td><span class="badge ${statusColor(b.BookingStat)}">${b.BookingStat}</span></td>
-        <td>
-          <span class="badge ${paymentColor(b.PayStat)}">${b.PayStat}</span>
-        </td>
-        <td>
-          <button class="btn btn-info btn-sm" onclick="showBookingDetails(${b.BookingID})">Details</button>
-          <button class="btn btn-warning btn-sm" onclick="editBooking(${b.BookingID})">Edit</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+    try {
+      const bookings = await apiGet('/api/bookings');
+      const tbody = document.getElementById('booking-table-body');
+      tbody.innerHTML = '';
+      bookings.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${b.FirstName} ${b.LastName}</td>
+          <td>${b.StartTime}</td>
+          <td>${b.EndTime}</td>
+          <td><span class="badge ${statusColor(b.BookingStat)}">${b.BookingStat}</span></td>
+          <td>
+            <span class="badge ${paymentColor(b.PayStat)}">${b.PayStat}</span>
+          </td>
+          <td>
+            <button class="btn btn-info btn-sm" onclick="showBookingDetails(${b.BookingID})">Details</button>
+            <button class="btn btn-warning btn-sm" onclick="editBooking(${b.BookingID})">Edit</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error('Failed to load bookings:', err);
+      alert('Failed to load bookings');
+    }
   }
 
   window.statusColor = function(stat) {
@@ -256,69 +262,68 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   window.paymentColor = function(stat) {
-    return stat === 'Paid' ? 'bg-success text-light' :
-           stat === 'Refunded' ? 'bg-info text-dark' :
-           stat === 'Pending' ? 'bg-warning text-dark' :
+    return stat === 'Paid'     ? 'bg-success text-light' :
+           stat === 'Refunded' ? 'bg-info text-dark'     :
+           stat === 'Pending'  ? 'bg-warning text-dark'  :
            'bg-secondary';
   }
 
-  // Show booking details in modal
   window.showBookingDetails = async function(bookingId) {
-    const res = await fetch(`http://localhost:3000/api/bookings/${bookingId}`);
-    const b = await res.json();
-    document.getElementById('booking-details-content').innerHTML = `
-      <ul>
-        <li><strong>Name:</strong> ${b.FirstName} ${b.LastName}</li>
-        <li><strong>Email:</strong> ${b.Email}</li>
-        <li><strong>Phone:</strong> ${b.Phone}</li>
-        <li><strong>Slot:</strong> ${b.SlotID}</li>
-        <li><strong>Status:</strong> ${b.BookingStat}</li>
-        <li><strong>Payment:</strong> ${b.PayStat}</li>
-        <li><strong>Payment Method:</strong> ${b.PayMethod}</li>
-        <li><strong>Cost:</strong> ${b.TotalCost} VND</li>
-      </ul>
-    `;
-    new bootstrap.Modal(document.getElementById('bookingDetailsModal')).show();
+    try {
+      const b = await apiGet(`/api/bookings/${bookingId}`);
+      document.getElementById('booking-details-content').innerHTML = `
+        <ul>
+          <li><strong>Name:</strong> ${b.FirstName} ${b.LastName}</li>
+          <li><strong>Email:</strong> ${b.Email}</li>
+          <li><strong>Phone:</strong> ${b.Phone}</li>
+          <li><strong>Slot:</strong> ${b.SlotID}</li>
+          <li><strong>Status:</strong> ${b.BookingStat}</li>
+          <li><strong>Payment:</strong> ${b.PayStat}</li>
+          <li><strong>Payment Method:</strong> ${b.PayMethod}</li>
+          <li><strong>Cost:</strong> ${b.TotalCost} VND</li>
+        </ul>
+      `;
+      new bootstrap.Modal(document.getElementById('bookingDetailsModal')).show();
+    } catch (err) {
+      alert('Failed to load booking details: ' + err.message);
+    }
   };
 
-  // Edit booking modal
-  window.editBooking = function(bookingId) {
-  fetch(`http://localhost:3000/api/bookings/${bookingId}`)
-    .then(res => res.json())
-    .then(b => {
+  window.editBooking = async function(bookingId) {
+    try {
+      const b = await apiGet(`/api/bookings/${bookingId}`);
       document.getElementById('editBookingID').value = b.BookingID;
-      document.getElementById('editEndDate').value = new Date(b.EndTime).toISOString().slice(0, 16);
-      document.getElementById('editStatus').value = b.BookingStat;
+      document.getElementById('editEndDate').value   =
+        b.EndTime ? new Date(b.EndTime).toISOString().slice(0, 16) : '';
+      document.getElementById('editStatus').value    = b.BookingStat;
       document.getElementById('editPayStatus').value = b.PayStat || "Unpaid";
       new bootstrap.Modal(document.getElementById('editBookingModal')).show();
-    });
-};
-
+    } catch (err) {
+      alert('Failed to load booking for edit: ' + err.message);
+    }
+  };
 
   document.getElementById('editBookingForm').onsubmit = async function(e) {
-  e.preventDefault();
-  const BookingID   = document.getElementById('editBookingID').value;
-  const EndTime     = document.getElementById('editEndDate').value;
-  const BookingStat = document.getElementById('editStatus').value;
-  const PayStat     = document.getElementById('editPayStatus').value;
+    e.preventDefault();
+    const BookingID   = document.getElementById('editBookingID').value;
+    const EndTime     = document.getElementById('editEndDate').value;
+    const BookingStat = document.getElementById('editStatus').value;
+    const PayStat     = document.getElementById('editPayStatus').value;
 
-  // Send both booking and payment updates in one request
-  const res = await fetch(`http://localhost:3000/api/bookings/${BookingID}/admin-edit`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ EndTime, BookingStat, PayStat })
-  });
-  if(res.ok) {
-    alert("Booking and payment updated");
-    loadBookings();
-    bootstrap.Modal.getInstance(document.getElementById('editBookingModal')).hide();
-  }
-};
+    try {
+      await apiPut(`/api/bookings/${BookingID}/admin-edit`, { EndTime, BookingStat, PayStat });
+      alert("Booking and payment updated");
+      loadBookings();
+      bootstrap.Modal.getInstance(document.getElementById('editBookingModal')).hide();
+    } catch (err) {
+      alert('Update failed: ' + err.message);
+    }
+  };
 
-  // Initial load
   loadBookings();
 });
 </script>
+
 
   <!--  -->
   <script src="../assets/libs/jquery/dist/jquery.min.js"></script>
