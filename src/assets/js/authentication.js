@@ -59,14 +59,19 @@ async function handleLogin(form) {
 
   try {
     const data = await postJson('/login', { email, password });
+
     if (data.redirect) {
-      window.location.href = data.redirect;
-    } else if (data.role === 'ADMIN') {
-      window.location.href = '../AdminDash/index.html';
+      window.location.href = data.redirect;  // backend decides
+      return;
+    }
+
+    // Fallback: in case redirect is missing
+    if (data.role === 'ADMIN') {
+      window.location.href = 'http://localhost:8080/src/AdminDash/index.html';
     } else if (data.role === 'CUSTOMER') {
-      window.location.href = '../BookingPage/index.html';
+      window.location.href = 'http://localhost:8080/src/BookingPage/index.html';
     } else {
-      alert('Login success but unknown role');
+      alert('Login success but role is not recognized: ' + (data.role || 'none'));
     }
   } catch (err) {
     alert(err.message);

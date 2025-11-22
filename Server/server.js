@@ -157,6 +157,7 @@ app.post('/login', async (req, res) => {
       'SELECT UserID, PasswordHash, Role FROM Users WHERE Email = ?',
       [email]
     );
+
     if (rows.length === 0) {
       return res.status(400).send('Invalid email or password');
     }
@@ -167,20 +168,34 @@ app.post('/login', async (req, res) => {
       return res.status(400).send('Invalid email or password');
     }
 
-    // create session
+    // set session
     req.session.userId = user.UserID;
     req.session.role = user.Role;
 
-
+    // redirect by role
     if (user.Role === 'ADMIN') {
-      return res.redirect('/..AdminDash/index.html');
-    } else if (user.Role === 'CUSTOMER') {
-      return res.redirect('/..BookingPage/index.html');
-    } else {
-      return res.redirect('/'); // fallback
+      return res.json({
+        success: true,
+        role: 'ADMIN',
+        redirect: 'http://localhost:8080/src/AdminDash/index.html'
+      });
     }
+    if (user.Role === 'CUSTOMER') {
+      return res.json({
+        success: true,
+        role: 'CUSTOMER',
+        redirect: 'http://localhost:8080/src/BookingPage/index.html'
+      });
+    }
+
+    // fallback if DB has unexpected role
+    return res.json({
+      success: true,
+      role: user.Role,
+      redirect: 'http://localhost:8080/'
+    });
   } catch (err) {
-    console.error(err);
+    console.error('Login error:', err);
     res.status(500).send('Server error');
   }
 });
