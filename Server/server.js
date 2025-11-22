@@ -1,19 +1,202 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { pool, connectDB } = require('./db'); // mysql2-based db.js
 const cors = require('cors');
+const session = require('express-session');
+
+const path = require('path');
+const srcDir = path.join(__dirname,  '..', 'src');
+
+const { pool, connectDB } = require('./db'); // keep your existing db.js
 
 const app = express();
+
+// ====== CORE MIDDLEWARE ======
 app.use(express.json());
+
+// CORS for frontend at http://localhost:8080
 app.use(cors({
   origin: 'http://localhost:8080',
   credentials: true
 }));
 
+// Session (must be after CORS, before routes)
+app.use(session({
+  secret: 'your_super_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 // 1 hour
+  }
+}));
+
 connectDB().catch(() => process.exit(1));
 
-// Dashboard Statistics
-app.get('/api/dashboard-stats', async (req, res) => {
+// ====== AUTH / ROLE MIDDLEWARE ======
+function requireLogin(req, res, next) {
+  if (!req.session.userId) {
+    return res.redirect('/authentication-login.html');
+  }
+  next();
+}
+
+function requireRole(roles) {
+  const allowed = Array.isArray(roles) ? roles : [roles];
+  return (req, res, next) => {
+    if (!req.session.userId || !allowed.includes(req.session.role)) {
+      return res.status(403).send('Forbidden');
+    }
+    next();
+  };
+}
+
+// public admin login/register pages
+app.get('/AdminDash/authentication-login.html', (req, res) => {
+  res.sendFile(path.join(srcDir, 'AdminDash', 'authentication-login.html'));
+});
+app.get('/AdminDash/authentication-register.html', (req, res) => {
+  res.sendFile(path.join(srcDir, 'AdminDash', 'authentication-register.html'));
+});
+
+// AdminDash: only ADMIN
+app.use(
+  '/AdminDash',
+  requireRole('ADMIN'),
+  express.static(path.join(srcDir, 'AdminDash'))
+);
+
+// BookingPage: ADMIN or CUSTOMER
+app.use(
+  '/BookingPage',
+  requireRole(['ADMIN', 'CUSTOMER']),
+  express.static(path.join(srcDir, 'BookingPage'))
+);
+
+// Root redirect based on role
+app.get('/', requireLogin, (req, res) => {
+  if (req.session.role === 'ADMIN') {
+    return res.redirect('/AdminDash/index.html');
+  }
+  if (req.session.role === 'CUSTOMER') {
+    return res.redirect('/BookingPage/index.html');
+  }
+  res.status(403).json({ message: 'Unknown role' });
+});
+
+// ================= AUTH ROUTES =================
+
+// Admin register: always ADMIN, then redirect back to login with message
+app.post('/register', async (req, res) => {
+  console.log('REGISTER body:', req.body);
+
+  const { username, email, password, role: requestedRole } = req.body;
+
+  if (!username || !email || !password) {
+    console.log('Missing fields, returning 400');
+    return res.status(400).send('Missing fields');
+  }
+
+  try {
+    // 1) Check if email exists
+    const [existing] = await pool.query(
+      'SELECT UserID, Email FROM Users WHERE Email = ?',
+      [email]
+    );
+    console.log('Existing rows for email:', existing);
+
+    if (existing.length > 0) {
+      return res.status(400).send('Email already registered');
+    }
+
+    // 2) Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 3) Role: only allow known values, default to ADMIN
+    const allowedRoles = ['ADMIN', 'CUSTOMER', 'MANAGER'];
+    const role = allowedRoles.includes(requestedRole) ? requestedRole : 'ADMIN';
+    console.log('Final role to insert:', role);
+
+    // 4) Insert user
+    const [result] = await pool.query(
+      `INSERT INTO Users (Username, Email, PasswordHash, Address, Role)
+       VALUES (?, ?, ?, ?, ?)`,
+      [username, email, passwordHash, 'N/A', role]
+    );
+    console.log('Insert result:', result);
+
+    const newUserId = result.insertId;
+
+    // 5) Create session
+    req.session.userId = newUserId;
+    req.session.role = role;
+
+    // 6) Redirect back to admin login with success message
+    // If you are using redirects (not JSON) with fetch, you can simply send text instead:
+    // res.send('OK');
+res.json({
+  success: true,
+  redirect: '../AdminDash/authentication-login.html?msg=registered_admin_success'
+});
+  } catch (err) {
+    console.error('Register error:', err);
+    // Send the message so you can see actual DB error in browser too
+    return res.status(500).send(err.message || 'Server error');
+  }
+});
+
+// Login route for both AdminDash and BookingPage
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).send('Missing email or password');
+  }
+
+  try {
+    const [rows] = await pool.query(
+      'SELECT UserID, PasswordHash, Role FROM Users WHERE Email = ?',
+      [email]
+    );
+    if (rows.length === 0) {
+      return res.status(400).send('Invalid email or password');
+    }
+
+    const user = rows[0];
+    const match = await bcrypt.compare(password, user.PasswordHash);
+    if (!match) {
+      return res.status(400).send('Invalid email or password');
+    }
+
+    // create session
+    req.session.userId = user.UserID;
+    req.session.role = user.Role;
+
+
+    if (user.Role === 'ADMIN') {
+      return res.redirect('/..AdminDash/index.html');
+    } else if (user.Role === 'CUSTOMER') {
+      return res.redirect('/..BookingPage/index.html');
+    } else {
+      return res.redirect('/'); // fallback
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
+// Logout
+app.post('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.json({ success: true });
+  });
+});
+
+// ================= PROTECTED API EXAMPLES =================
+// You can decide which APIs require ADMIN vs CUSTOMER
+
+// Example: dashboard stats only for ADMIN
+app.get('/api/dashboard-stats', requireRole('ADMIN'), async (req, res) => {
   try {
     const [totalUsersRows] = await pool.query('SELECT COUNT(UserID) AS totalUsers FROM Users');
     const [availableSlotsRows] = await pool.query("SELECT COUNT(SlotID) AS availableSlots FROM ParkingSlot WHERE SlotStatus = 'available'");
@@ -31,8 +214,8 @@ app.get('/api/dashboard-stats', async (req, res) => {
   }
 });
 
-// Get area info
-app.get('/api/area/:id', async (req, res) => {
+// Example: Booking endpoints for CUSTOMER (or ADMIN as you wish)
+app.get('/api/area/:id', requireLogin, async (req, res) => {
   try {
     const [rows] = await pool.query(
       'SELECT AreaID, ParkName, ParkingLocation, TotalSlots, AvailableSlots, PricePerHour FROM ParkingAreas WHERE AreaID = ?',
@@ -44,8 +227,7 @@ app.get('/api/area/:id', async (req, res) => {
   }
 });
 
-// Get slots for area (no SlotNum, uses SlotID and SlotLocation)
-app.get('/api/area/:id/slots', async (req, res) => {
+app.get('/api/area/:id/slots', requireLogin, async (req, res) => {
   try {
     const [rows] = await pool.query(
       'SELECT SlotID, SlotLocation, SlotStatus, CurrentVehID FROM ParkingSlot WHERE AreaID = ? ORDER BY SlotID',
@@ -57,8 +239,7 @@ app.get('/api/area/:id/slots', async (req, res) => {
   }
 });
 
-// Book a slot (assign vehicle to CurrentVehID, set to not available)
-app.post('/api/slot/:slotId/book', async (req, res) => {
+app.post('/api/slot/:slotId/book', requireLogin, async (req, res) => {
   const { vehicleId } = req.body;
   try {
     await pool.query(
@@ -71,8 +252,7 @@ app.post('/api/slot/:slotId/book', async (req, res) => {
   }
 });
 
-// Unbook a slot (remove vehicle, set to available)
-app.post('/api/slot/:slotId/unbook', async (req, res) => {
+app.post('/api/slot/:slotId/unbook', requireLogin, async (req, res) => {
   try {
     await pool.query(
       "UPDATE ParkingSlot SET CurrentVehID = NULL, SlotStatus = 'available' WHERE SlotID = ?",
@@ -83,20 +263,28 @@ app.post('/api/slot/:slotId/unbook', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// Message for Admin registration success
+app.get('/api/auth/message', (req, res) => {
+  const msg = req.session.regSuccessMessage || null;
+  // clear it so it only shows once
+  req.session.regSuccessMessage = null;
+  res.json({ message: msg });
+});
 
-// Test Booking 
 
-app.post('/api/booking', async (req, res) => {
+
+// ====== Booking & Payment (keep your logic, just add requireRole/requireLogin as you want) ======
+
+app.post('/api/booking', requireLogin, async (req, res) => {
   const bookingData = req.body;
-  bookingData.UserID = 1;
-  bookingData.AreaID = 1;
-  bookingData.SlotID = 1;
-  bookingData.VehicleID = 1;
+  // You probably want UserID from session:
+  bookingData.UserID = req.session.userId;
+
   const {
     UserID,
     AreaID,
     SlotID,
-    VehicleID, // Vehicle to assign to the slot
+    VehicleID,
     FirstName,
     LastName,
     Email,
@@ -104,39 +292,34 @@ app.post('/api/booking', async (req, res) => {
     UserAddress,
     StartTime,
     EndTime,
-    TotalCost, // Pass from frontend, or calculate before booking/payment
-    PayMethod // e.g. 'Online Banking', 'Credit Card', 'Pay In Cash'
-  } = req.body;
+    TotalCost,
+    PayMethod
+  } = bookingData;
 
-  // Default status fields
   const BookingStat = 'PENDING';
   const PayStat = 'Unpaid';
 
-  // MySQL transaction for atomicity
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    // 1. Insert booking
     const [bookingResult] = await conn.query(
       `INSERT INTO Booking
-      (UserID, AreaID, SlotID, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime, BookingStat)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (UserID, AreaID, SlotID, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime, BookingStat)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [UserID, AreaID, SlotID, FirstName, LastName, Email, Phone, UserAddress, StartTime, EndTime, BookingStat]
     );
-    const BookingID = bookingResult.insertId; // Get inserted booking ID
+    const BookingID = bookingResult.insertId;
 
-    // 2. Update parking slot CurrentVehID and status
     await conn.query(
       "UPDATE ParkingSlot SET CurrentVehID = ?, SlotStatus = 'not available' WHERE SlotID = ?",
       [VehicleID, SlotID]
     );
 
-    // 3. Insert payment record
     await conn.query(
       `INSERT INTO Payment
-      (UserID, BookingID, TotalCost, PayStat, PayMethod)
-      VALUES (?, ?, ?, ?, ?)`,
+       (UserID, BookingID, TotalCost, PayStat, PayMethod)
+       VALUES (?, ?, ?, ?, ?)`,
       [UserID, BookingID, TotalCost, PayStat, PayMethod]
     );
 
@@ -150,29 +333,23 @@ app.post('/api/booking', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-// 
-// Convert '2025-11-04T21:00' to '2025-11-04 21:00:00'
+
 function normalizeDateTime(htmlInput) {
   if (!htmlInput) return null;
-  // Handles 'YYYY-MM-DDTHH:mm' -> 'YYYY-MM-DD HH:mm:00'
   return htmlInput.replace('T', ' ') + (htmlInput.length === 16 ? ':00' : '');
 }
-// 
-// Admin edits booking + payment info in one call
-app.put('/api/bookings/:id/admin-edit', async (req, res) => {
-  
+
+app.put('/api/bookings/:id/admin-edit', requireRole('ADMIN'), async (req, res) => {
   let { EndTime, BookingStat, PayStat } = req.body;
   const BookingID = req.params.id;
 
-  if (EndTime && EndTime.includes('T')) EndTime = normalizeDateTime(EndTime); // Convert to proper MySQL DATETIME
-  
+  if (EndTime && EndTime.includes('T')) EndTime = normalizeDateTime(EndTime);
+
   const conn = await pool.getConnection();
   try {
-    // Fetch StartTime
     const [[bookingRow]] = await conn.query("SELECT StartTime FROM Booking WHERE BookingID=?", [BookingID]);
     if (!bookingRow) throw new Error("Booking not found.");
 
-    // Compare
     if (new Date(EndTime) <= new Date(bookingRow.StartTime)) {
       throw new Error("EndTime must be after StartTime!");
     }
@@ -186,43 +363,45 @@ app.put('/api/bookings/:id/admin-edit', async (req, res) => {
       `UPDATE Payment SET PayStat=? WHERE BookingID=?`,
       [PayStat, BookingID]
     );
-    
-    // If Paid, set occupied
-    if(PayStat === 'Paid') {
-      const [rows] = await conn.query('SELECT SlotID, VehicleID FROM Booking WHERE BookingID=?', [req.params.id]);
-      if(rows.length) {
+
+    if (PayStat === 'Paid') {
+      const [rows] = await conn.query('SELECT SlotID, VehicleID FROM Booking WHERE BookingID=?', [BookingID]);
+      if (rows.length) {
         const { SlotID, VehicleID } = rows[0];
-        await conn.query("UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?", [VehicleID || 1, SlotID]);
+        await conn.query(
+          "UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?",
+          [VehicleID || 1, SlotID]
+        );
       }
     }
     await conn.commit();
     conn.release();
-    res.json({success:true});
-  } catch(err) {
+    res.json({ success: true });
+  } catch (err) {
     await conn.rollback();
     conn.release();
-    console.error('Admin booking edit error:', err); 
-    res.status(400).json({success:false, error: err.message});
+    console.error('Admin booking edit error:', err);
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 
-
-// Test users table
-app.get('/api/users', async (req, res) => {
+// Users CRUD – protect with ADMIN
+app.get('/api/users', requireRole('ADMIN'), async (req, res) => {
   const [rows] = await pool.query('SELECT UserID, Username, PasswordHash, Email, Address, Role FROM Users');
   res.json(rows);
 });
 
-// API for Users Section
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', requireRole('ADMIN'), async (req, res) => {
   const { Username, Email, Password, Address, Role } = req.body;
   const hash = await bcrypt.hash(Password, 10);
-  await pool.query('INSERT INTO Users (Username, Email, PasswordHash, Address, Role) VALUES (?, ?, ?, ?, ?)',
-    [Username, Email, hash, Address, Role]);
+  await pool.query(
+    'INSERT INTO Users (Username, Email, PasswordHash, Address, Role) VALUES (?, ?, ?, ?, ?)',
+    [Username, Email, hash, Address, Role]
+  );
   res.status(201).json({ success: true });
 });
 
-app.put('/api/users/:id', async (req, res) => {
+app.put('/api/users/:id', requireRole('ADMIN'), async (req, res) => {
   const { Username, Email, Address, Role, Password } = req.body;
   let query = 'UPDATE Users SET Username=?, Email=?, Address=?, Role=?';
   let params = [Username, Email, Address, Role, req.params.id];
@@ -237,16 +416,13 @@ app.put('/api/users/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+app.delete('/api/users/:id', requireRole('ADMIN'), async (req, res) => {
   await pool.query('DELETE FROM Users WHERE UserID=?', [req.params.id]);
   res.json({ success: true });
 });
 
-
-
-// Bookin Section (Admin Dashboard)
-// Get all bookings with joined payment info
-app.get('/api/bookings', async (req, res) => {
+// Bookings list (ADMIN dashboard)
+app.get('/api/bookings', requireRole('ADMIN'), async (req, res) => {
   const [rows] = await pool.query(`
     SELECT b.*, p.PayStat, p.PayMethod, p.TotalCost
     FROM Booking b
@@ -256,8 +432,7 @@ app.get('/api/bookings', async (req, res) => {
   res.json(rows);
 });
 
-// Get one booking detail
-app.get('/api/bookings/:id', async (req, res) => {
+app.get('/api/bookings/:id', requireRole('ADMIN'), async (req, res) => {
   const [rows] = await pool.query(`
     SELECT b.*, p.PayStat, p.PayMethod, p.TotalCost
     FROM Booking b
@@ -267,41 +442,33 @@ app.get('/api/bookings/:id', async (req, res) => {
   res.json(rows[0] || {});
 });
 
-// Edit booking status/endTime
-app.put('/api/bookings/:id', async (req, res) => {
+app.put('/api/bookings/:id', requireRole('ADMIN'), async (req, res) => {
   const { EndTime, BookingStat } = req.body;
-  await pool.query(`UPDATE Booking SET EndTime = ?, BookingStat = ? WHERE BookingID = ?`, [EndTime, BookingStat, req.params.id]);
-  res.json({success:true});
+  await pool.query(
+    `UPDATE Booking SET EndTime = ?, BookingStat = ? WHERE BookingID = ?`,
+    [EndTime, BookingStat, req.params.id]
+  );
+  res.json({ success: true });
 });
 
-// Admin updates payment status
-app.put('/api/bookings/:id/payment', async (req, res) => {
+app.put('/api/bookings/:id/payment', requireRole('ADMIN'), async (req, res) => {
   const { PayStat } = req.body;
-  // Update Payment table
   await pool.query(`UPDATE Payment SET PayStat=? WHERE BookingID=?`, [PayStat, req.params.id]);
-  // If Paid, occupy slot
-  if(PayStat === 'Paid') {
-    // Assuming you want to occupy slot as well:
+
+  if (PayStat === 'Paid') {
     const [rows] = await pool.query('SELECT SlotID, VehicleID FROM Booking WHERE BookingID=?', [req.params.id]);
-    if(rows.length) {
+    if (rows.length) {
       const { SlotID, VehicleID } = rows[0];
-      await pool.query("UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?", [VehicleID || 1, SlotID]);
+      await pool.query(
+        "UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?",
+        [VehicleID || 1, SlotID]
+      );
     }
   }
-  res.json({success:true});
+  res.json({ success: true });
 });
 
-
-
-
-
-
-
-
-
-// 
-
-// DB test endpoints remain the same
+// DB test endpoints
 app.get('/api/test-db', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM admins LIMIT 1');
@@ -316,9 +483,12 @@ app.get('/api/test-db', async (req, res) => {
     });
   }
 });
+
 app.get('/api/users/test', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT UserID, username, email, role FROM Users ORDER BY UserID DESC LIMIT 1');
+    const [rows] = await pool.query(
+      'SELECT UserID, username, email, role FROM Users ORDER BY UserID DESC LIMIT 1'
+    );
     res.json(rows[0] || null);
   } catch (e) {
     res.status(500).json({ error: e.message });
