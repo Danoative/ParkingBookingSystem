@@ -150,6 +150,62 @@ app.post('/api/booking', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// 
+// Convert '2025-11-04T21:00' to '2025-11-04 21:00:00'
+function normalizeDateTime(htmlInput) {
+  if (!htmlInput) return null;
+  // Handles 'YYYY-MM-DDTHH:mm' -> 'YYYY-MM-DD HH:mm:00'
+  return htmlInput.replace('T', ' ') + (htmlInput.length === 16 ? ':00' : '');
+}
+// 
+// Admin edits booking + payment info in one call
+app.put('/api/bookings/:id/admin-edit', async (req, res) => {
+  
+  let { EndTime, BookingStat, PayStat } = req.body;
+  const BookingID = req.params.id;
+
+  if (EndTime && EndTime.includes('T')) EndTime = normalizeDateTime(EndTime); // Convert to proper MySQL DATETIME
+  
+  const conn = await pool.getConnection();
+  try {
+    // Fetch StartTime
+    const [[bookingRow]] = await conn.query("SELECT StartTime FROM Booking WHERE BookingID=?", [BookingID]);
+    if (!bookingRow) throw new Error("Booking not found.");
+
+    // Compare
+    if (new Date(EndTime) <= new Date(bookingRow.StartTime)) {
+      throw new Error("EndTime must be after StartTime!");
+    }
+
+    await conn.beginTransaction();
+    await conn.query(
+      `UPDATE Booking SET EndTime = ?, BookingStat = ? WHERE BookingID = ?`,
+      [EndTime, BookingStat, BookingID]
+    );
+    await conn.query(
+      `UPDATE Payment SET PayStat=? WHERE BookingID=?`,
+      [PayStat, BookingID]
+    );
+    
+    // If Paid, set occupied
+    if(PayStat === 'Paid') {
+      const [rows] = await conn.query('SELECT SlotID, VehicleID FROM Booking WHERE BookingID=?', [req.params.id]);
+      if(rows.length) {
+        const { SlotID, VehicleID } = rows[0];
+        await conn.query("UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?", [VehicleID || 1, SlotID]);
+      }
+    }
+    await conn.commit();
+    conn.release();
+    res.json({success:true});
+  } catch(err) {
+    await conn.rollback();
+    conn.release();
+    console.error('Admin booking edit error:', err); 
+    res.status(400).json({success:false, error: err.message});
+  }
+});
+
 
 // Test users table
 app.get('/api/users', async (req, res) => {

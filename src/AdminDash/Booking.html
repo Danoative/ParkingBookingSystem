@@ -183,23 +183,32 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editBookingModalLabel">Edit Booking</h5>
+        <h5 class="modal-title" id="editBookingModalLabel">Edit Booking & Payment</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <form id="editBookingForm">
           <input type="hidden" id="editBookingID" />
           <div class="mb-3">
-            <label for="editEndDate" class="form-label">End Date</label>
+            <label for="editEndDate" class="form-label">End Date & Time</label>
             <input type="datetime-local" id="editEndDate" class="form-control" required />
           </div>
           <div class="mb-3">
-            <label for="editStatus" class="form-label">Status</label>
+            <label for="editStatus" class="form-label">Booking Status</label>
             <select id="editStatus" class="form-select">
               <option value="PENDING">Pending</option>
               <option value="CONFIRMED">Confirmed</option>
               <option value="CANCELLED">Cancelled</option>
               <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="editPayStatus" class="form-label">Payment Status</label>
+            <select id="editPayStatus" class="form-select">
+              <option value="Unpaid">Unpaid</option>
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+              <option value="Refunded">Refunded</option>
             </select>
           </div>
           <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -229,7 +238,6 @@ document.addEventListener("DOMContentLoaded", function() {
         <td><span class="badge ${statusColor(b.BookingStat)}">${b.BookingStat}</span></td>
         <td>
           <span class="badge ${paymentColor(b.PayStat)}">${b.PayStat}</span>
-          <button class="btn btn-sm btn-outline-primary ms-1" onclick="editPaymentStatus(${b.BookingID},'${b.PayStat}')">Edit</button>
         </td>
         <td>
           <button class="btn btn-info btn-sm" onclick="showBookingDetails(${b.BookingID})">Details</button>
@@ -275,48 +283,37 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Edit booking modal
   window.editBooking = function(bookingId) {
-    // Fetch current booking, show modal, fill values
-    fetch(`http://localhost:3000/api/bookings/${bookingId}`)
-      .then(res => res.json())
-      .then(b => {
-        document.getElementById('editBookingID').value = b.BookingID;
-        document.getElementById('editEndDate').value = new Date(b.EndTime).toISOString().slice(0,-1);
-        document.getElementById('editStatus').value = b.BookingStat;
-        new bootstrap.Modal(document.getElementById('editBookingModal')).show();
-      });
-  };
+  fetch(`http://localhost:3000/api/bookings/${bookingId}`)
+    .then(res => res.json())
+    .then(b => {
+      document.getElementById('editBookingID').value = b.BookingID;
+      document.getElementById('editEndDate').value = new Date(b.EndTime).toISOString().slice(0, 16);
+      document.getElementById('editStatus').value = b.BookingStat;
+      document.getElementById('editPayStatus').value = b.PayStat || "Unpaid";
+      new bootstrap.Modal(document.getElementById('editBookingModal')).show();
+    });
+};
+
 
   document.getElementById('editBookingForm').onsubmit = async function(e) {
-    e.preventDefault();
-    const BookingID = document.getElementById('editBookingID').value;
-    const EndTime = document.getElementById('editEndDate').value;
-    const BookingStat = document.getElementById('editStatus').value;
-    const res = await fetch(`http://localhost:3000/api/bookings/${BookingID}`, {
-      method: "PUT",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({EndTime, BookingStat})
-    });
-    if(res.ok) {
-      alert("Booking updated");
-      loadBookings();
-      bootstrap.Modal.getInstance(document.getElementById('editBookingModal')).hide();
-    }
-  };
+  e.preventDefault();
+  const BookingID   = document.getElementById('editBookingID').value;
+  const EndTime     = document.getElementById('editEndDate').value;
+  const BookingStat = document.getElementById('editStatus').value;
+  const PayStat     = document.getElementById('editPayStatus').value;
 
-  // Inline pay status editor
-  window.editPaymentStatus = function(bookingId, currentStatus) {
-    const newStatus = prompt("Set new payment status: Paid, Unpaid, Refunded, Pending", currentStatus);
-    if(newStatus && ['Paid','Unpaid','Refunded','Pending'].includes(newStatus)) {
-      fetch(`http://localhost:3000/api/bookings/${bookingId}/payment`, {
-        method: "PUT",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ PayStat: newStatus })
-      }).then(res => {
-        if(res.ok) loadBookings();
-        else alert("Failed to update payment status");
-      });
-    }
-  };
+  // Send both booking and payment updates in one request
+  const res = await fetch(`http://localhost:3000/api/bookings/${BookingID}/admin-edit`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ EndTime, BookingStat, PayStat })
+  });
+  if(res.ok) {
+    alert("Booking and payment updated");
+    loadBookings();
+    bootstrap.Modal.getInstance(document.getElementById('editBookingModal')).hide();
+  }
+};
 
   // Initial load
   loadBookings();
