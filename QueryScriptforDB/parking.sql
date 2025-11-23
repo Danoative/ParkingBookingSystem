@@ -74,6 +74,7 @@ CREATE TABLE Booking (
     UserID INT NOT NULL,
     AreaID INT NOT NULL,
     SlotID INT NOT NULL,
+	VehicleID INT NULL,  
     FirstName VARCHAR(100) NOT NULL,
     LastName VARCHAR(100) NOT NULL,
     Email VARCHAR(255) NOT NULL,
@@ -95,6 +96,10 @@ CREATE TABLE Booking (
     CONSTRAINT fk_booking_slot
         FOREIGN KEY (SlotID) REFERENCES ParkingSlot(SlotID)
         ON DELETE RESTRICT ON UPDATE CASCADE,
+        
+	CONSTRAINT fk_booking_vehicle          -- NEW FK
+        FOREIGN KEY (VehicleID) REFERENCES Vehicles(VehID)
+        ON DELETE SET NULL ON UPDATE CASCADE,
 
     CONSTRAINT chk_time_order CHECK (EndTime > StartTime)
 );

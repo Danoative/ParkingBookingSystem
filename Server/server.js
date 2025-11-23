@@ -35,7 +35,7 @@ connectDB().catch(() => process.exit(1));
 // ====== AUTH / ROLE MIDDLEWARE ======
 function requireLogin(req, res, next) {
   if (!req.session.userId) {
-    return res.redirect('/authentication-login.html');
+    return res.status(401).json({ success: false, error: 'Not logged in' });
   }
   next();
 }
@@ -207,6 +207,110 @@ app.post('/logout', (req, res) => {
   });
 });
 
+// Customer register: creates CUSTOMER user + vehicle
+app.post('/customer/register', async (req, res) => {
+  const { username, email, password, vehType, plateNum } = req.body;
+
+  if (!username || !email || !password || !vehType || !plateNum) {
+    return res.status(400).send('Missing fields');
+  }
+
+  try {
+    // 1) Check if email exists
+    const [existing] = await pool.query(
+      'SELECT UserID FROM Users WHERE Email = ?',
+      [email]
+    );
+    if (existing.length > 0) {
+      return res.status(400).send('Email already registered');
+    }
+
+    // 2) Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 3) Insert user as CUSTOMER
+    const role = 'CUSTOMER';
+    const [userResult] = await pool.query(
+      `INSERT INTO Users (Username, Email, PasswordHash, Address, Role)
+       VALUES (?, ?, ?, ?, ?)`,
+      [username, email, passwordHash, 'N/A', role]
+    );
+    const newUserId = userResult.insertId;
+
+    // 4) Insert vehicle
+    await pool.query(
+      `INSERT INTO Vehicles (UserID, VehType, PlateNum)
+       VALUES (?, ?, ?)`,
+      [newUserId, vehType, plateNum]
+    );
+
+    // Optionally auto-login:
+    req.session.userId   = newUserId;
+    req.session.role     = role;
+    req.session.username = username;
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Customer register error:', err);
+    return res.status(500).send('Server error');
+  }
+});
+
+// Customer login
+app.post('/customer/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).send('Missing email or password');
+  }
+
+  try {
+    // Only allow CUSTOMER here
+    const [rows] = await pool.query(
+      'SELECT UserID, Username, PasswordHash, Role FROM Users WHERE Email = ?',
+      [email]
+    );
+    if (rows.length === 0) {
+      return res.status(400).send('Invalid email or password');
+    }
+
+    const user = rows[0];
+    if (user.Role !== 'CUSTOMER') {
+      return res.status(403).send('This account is not a customer account');
+    }
+
+    const match = await bcrypt.compare(password, user.PasswordHash);
+    if (!match) {
+      return res.status(400).send('Invalid email or password');
+    }
+
+    // Get vehicle (optional for later use)
+    const [vehRows] = await pool.query(
+      'SELECT VehID, VehType, PlateNum FROM Vehicles WHERE UserID = ? LIMIT 1',
+      [user.UserID]
+    );
+    const vehicle = vehRows[0] || null;
+
+    req.session.userId   = user.UserID;
+    req.session.role     = user.Role;
+    req.session.username = user.Username;
+    if (vehicle) {
+      req.session.vehId    = vehicle.VehID;
+      req.session.vehType  = vehicle.VehType;
+      req.session.plateNum = vehicle.PlateNum;
+    }
+
+    return res.json({
+      success: true,
+      role: user.Role,
+      vehicle
+    });
+  } catch (err) {
+    console.error('Customer login error:', err);
+    return res.status(500).send('Server error');
+  }
+});
+
 // ================= PROTECTED API EXAMPLES =================
 // You can decide which APIs require ADMIN vs CUSTOMER
 
@@ -291,15 +395,12 @@ app.get('/api/auth/message', (req, res) => {
 // ====== Booking & Payment (keep your logic, just add requireRole/requireLogin as you want) ======
 
 app.post('/api/booking', requireLogin, async (req, res) => {
-  const bookingData = req.body;
-  // You probably want UserID from session:
-  bookingData.UserID = req.session.userId;
+  const UserID    = req.session.userId;
+  const VehicleID = req.session.vehId || null;
 
   const {
-    UserID,
     AreaID,
     SlotID,
-    VehicleID,
     FirstName,
     LastName,
     Email,
@@ -309,10 +410,24 @@ app.post('/api/booking', requireLogin, async (req, res) => {
     EndTime,
     TotalCost,
     PayMethod
-  } = bookingData;
+  } = req.body;
+
+  if (!UserID) {
+    return res.status(401).json({ success: false, error: 'Not logged in' });
+  }
+
+  if (!AreaID || !SlotID || !FirstName || !LastName || !Email || !Phone ||
+      !UserAddress || !StartTime || !EndTime || !TotalCost || !PayMethod) {
+    console.log('Missing fields in booking body:', req.body);
+    return res.status(400).json({ success: false, error: 'Missing booking fields' });
+  }
+
+  if (!VehicleID) {
+    return res.status(400).json({ success: false, error: 'No vehicle associated with this account' });
+  }
 
   const BookingStat = 'PENDING';
-  const PayStat = 'Unpaid';
+  const PayStat     = 'Unpaid';
 
   const conn = await pool.getConnection();
   try {
@@ -341,62 +456,16 @@ app.post('/api/booking', requireLogin, async (req, res) => {
     await conn.commit();
     conn.release();
 
-    res.json({ success: true, BookingID, message: "Booking and payment registered, awaiting payment." });
+    res.json({
+      success: true,
+      BookingID,
+      message: "Booking and payment registered, awaiting payment."
+    });
   } catch (err) {
     await conn.rollback();
     conn.release();
+    console.error('Booking error:', err);
     res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-function normalizeDateTime(htmlInput) {
-  if (!htmlInput) return null;
-  return htmlInput.replace('T', ' ') + (htmlInput.length === 16 ? ':00' : '');
-}
-
-app.put('/api/bookings/:id/admin-edit', requireRole('ADMIN'), async (req, res) => {
-  let { EndTime, BookingStat, PayStat } = req.body;
-  const BookingID = req.params.id;
-
-  if (EndTime && EndTime.includes('T')) EndTime = normalizeDateTime(EndTime);
-
-  const conn = await pool.getConnection();
-  try {
-    const [[bookingRow]] = await conn.query("SELECT StartTime FROM Booking WHERE BookingID=?", [BookingID]);
-    if (!bookingRow) throw new Error("Booking not found.");
-
-    if (new Date(EndTime) <= new Date(bookingRow.StartTime)) {
-      throw new Error("EndTime must be after StartTime!");
-    }
-
-    await conn.beginTransaction();
-    await conn.query(
-      `UPDATE Booking SET EndTime = ?, BookingStat = ? WHERE BookingID = ?`,
-      [EndTime, BookingStat, BookingID]
-    );
-    await conn.query(
-      `UPDATE Payment SET PayStat=? WHERE BookingID=?`,
-      [PayStat, BookingID]
-    );
-
-    if (PayStat === 'Paid') {
-      const [rows] = await conn.query('SELECT SlotID, VehicleID FROM Booking WHERE BookingID=?', [BookingID]);
-      if (rows.length) {
-        const { SlotID, VehicleID } = rows[0];
-        await conn.query(
-          "UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?",
-          [VehicleID || 1, SlotID]
-        );
-      }
-    }
-    await conn.commit();
-    conn.release();
-    res.json({ success: true });
-  } catch (err) {
-    await conn.rollback();
-    conn.release();
-    console.error('Admin booking edit error:', err);
-    res.status(400).json({ success: false, error: err.message });
   }
 });
 
@@ -483,6 +552,67 @@ app.put('/api/bookings/:id/payment', requireRole('ADMIN'), async (req, res) => {
   res.json({ success: true });
 });
 
+// Convert '2025-11-04T21:00' to '2025-11-04 21:00:00'
+function normalizeDateTime(htmlInput) {
+  if (!htmlInput) return null;
+  // Handles 'YYYY-MM-DDTHH:mm' -> 'YYYY-MM-DD HH:mm:00'
+  return htmlInput.replace('T', ' ') + (htmlInput.length === 16 ? ':00' : '');
+}
+// Admin edits booking + payment info in one call
+app.put('/api/bookings/:id/admin-edit', requireRole('ADMIN'), async (req, res) => {
+  let { EndTime, BookingStat, PayStat } = req.body;
+  const BookingID = req.params.id;
+
+  if (EndTime && EndTime.includes('T')) {
+    EndTime = normalizeDateTime(EndTime); // your existing helper
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    const [[bookingRow]] = await conn.query(
+      "SELECT StartTime FROM Booking WHERE BookingID=?",
+      [BookingID]
+    );
+    if (!bookingRow) throw new Error("Booking not found.");
+
+    if (new Date(EndTime) <= new Date(bookingRow.StartTime)) {
+      throw new Error("EndTime must be after StartTime!");
+    }
+
+    await conn.beginTransaction();
+    await conn.query(
+      `UPDATE Booking SET EndTime = ?, BookingStat = ? WHERE BookingID = ?`,
+      [EndTime, BookingStat, BookingID]
+    );
+    await conn.query(
+      `UPDATE Payment SET PayStat=? WHERE BookingID=?`,
+      [PayStat, BookingID]
+    );
+
+    if (PayStat === 'Paid') {
+      const [rows] = await conn.query(
+        'SELECT SlotID, VehicleID FROM Booking WHERE BookingID=?',
+        [BookingID]
+      );
+      if (rows.length) {
+        const { SlotID, VehicleID } = rows[0];
+        await conn.query(
+          "UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?",
+          [VehicleID || 1, SlotID]
+        );
+      }
+    }
+
+    await conn.commit();
+    conn.release();
+    res.json({ success: true });
+  } catch (err) {
+    await conn.rollback();
+    conn.release();
+    console.error('Admin booking edit error:', err);
+    res.status(400).json({ success: false, error: err.message });
+  }
+})
 // DB test endpoints
 app.get('/api/test-db', async (req, res) => {
   try {
