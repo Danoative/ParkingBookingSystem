@@ -19,7 +19,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Session (must be after CORS, before routes)
+// Session 
 app.use(session({
   secret: 'your_super_secret_key',
   resave: false,
@@ -284,7 +284,7 @@ app.post('/customer/login', async (req, res) => {
       return res.status(400).send('Invalid email or password');
     }
 
-    // Get vehicle (optional for later use)
+    // Get vehicle
     const [vehRows] = await pool.query(
       'SELECT VehID, VehType, PlateNum FROM Vehicles WHERE UserID = ? LIMIT 1',
       [user.UserID]
@@ -311,10 +311,8 @@ app.post('/customer/login', async (req, res) => {
   }
 });
 
-// ================= PROTECTED API EXAMPLES =================
-// You can decide which APIs require ADMIN vs CUSTOMER
+// ================= PROTECTED API =================
 
-// Example: dashboard stats only for ADMIN
 app.get('/api/dashboard-stats', requireRole('ADMIN'), async (req, res) => {
   try {
     const [totalUsersRows] = await pool.query('SELECT COUNT(UserID) AS totalUsers FROM Users');
@@ -385,14 +383,13 @@ app.post('/api/slot/:slotId/unbook', requireLogin, async (req, res) => {
 // Message for Admin registration success
 app.get('/api/auth/message', (req, res) => {
   const msg = req.session.regSuccessMessage || null;
-  // clear it so it only shows once
   req.session.regSuccessMessage = null;
   res.json({ message: msg });
 });
 
 
 
-// ====== Booking & Payment (keep your logic, just add requireRole/requireLogin as you want) ======
+// ====== Booking & Payment ======
 
 app.post('/api/booking', requireLogin, async (req, res) => {
   const UserID    = req.session.userId;
