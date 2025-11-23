@@ -1,0 +1,29 @@
+.user-table-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 8px 0;
+}
+.user-table-header {
+  background: #fafbfc;
+  font-weight: 600;
+  padding: 12px 0;
+}
+.user-col {
+  min-width:120px;
+  max-width:220px;
+  flex: 1 1 160px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 10px;
+}
+.user-col:last-child {
+  text-align: right;
+  min-width:130px;
+}
+/* Badge color */
+.bg-purple { background-color: #7c3aed; color: #fff; }
+.btn-warning { background-color: #f7c873; color: #444; border: none; }
+.btn-danger { background-color: #fd5c5c; color: #fff; border: none; }

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard - Users</title>
+  <link rel="shortcut icon" type="image/png" href="../assets/images/logos/seodashlogo.png" />
+  
+  <link rel="stylesheet" href="../assets/css/styles.min.css" />
+  <link rel="stylesheet" href="../assets/css/userSection.css" />
+</head>
+
+<body>
+  <!--  Body Wrapper -->
+  <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+    data-sidebar-position="fixed" data-header-position="fixed">
+    <!-- Sidebar Start -->
+    <aside class="left-sidebar">
+      <!-- Sidebar scroll-->
+      <div>
+        <div class="brand-logo d-flex align-items-center justify-content-between">
+          <a href="./index.html" class="text-nowrap logo-img">
+            <img src="../assets/images/logos/logo-light.svg" alt="" />
+          </a>
+          <div class="close-btn d-xl-none d-block sidebartoggler cursor-pointer" id="sidebarCollapse">
+            <i class="ti ti-x fs-8"></i>
+          </div>
+        </div>
+        <!-- Sidebar navigation-->
+        <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
+          <ul id="sidebarnav">
+            <li class="nav-small-cap">
+              <i class="ti ti-dots nav-small-cap-icon fs-6"></i>
+              <span class="hide-menu">Home</span>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./index.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:home-smile-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Main</span>
+              </a>
+            </li>
+            <li class="nav-small-cap">
+              <i class="ti ti-dots nav-small-cap-icon fs-6"></i>
+              <span class="hide-menu">Information</span>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./parkingslot.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:layers-minimalistic-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Parking Slot</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./user.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:danger-circle-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">User</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./Booking.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:bookmark-square-minimalistic-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Booking</span>
+              </a>
+            </li>
+
+            <!-- <li class="sidebar-item">
+              <a class="sidebar-link" href="./ui-forms.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:file-text-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Forms</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./ui-typography.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:text-field-focus-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Typography</span>
+              </a>
+            </li> -->
+
+            <li class="nav-small-cap">
+              <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-6" class="fs-6"></iconify-icon>
+              <span class="hide-menu">AUTH</span>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./authentication-login.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:login-3-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Login</span>
+              </a>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="./authentication-register.html" aria-expanded="false">
+                <span>
+                  <iconify-icon icon="solar:user-plus-rounded-bold-duotone" class="fs-6"></iconify-icon>
+                </span>
+                <span class="hide-menu">Register</span>
+              </a>
+            </li>
+            <li class="nav-small-cap">
+              <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4" class="fs-6"></iconify-icon>
+              
+          </ul>
+          
+        </nav>
+        <!-- End Sidebar navigation -->
+      </div>
+      <!-- End Sidebar scroll-->
+    </aside>
+    <!--  Sidebar End -->
+    <!--  Main wrapper -->
+    <div class="body-wrapper">
+      <!--  Header Start -->
+      <header class="app-header">
+        <nav class="navbar navbar-expand-lg navbar-light">
+          <ul class="navbar-nav">
+            <li class="nav-item d-block d-xl-none">
+              <a class="nav-link sidebartoggler nav-icon-hover" id="headerCollapse" href="javascript:void(0)">
+                <i class="ti ti-menu-2"></i>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link nav-icon-hover" href="javascript:void(0)">
+                <i class="ti ti-bell-ringing"></i>
+                <div class="notification bg-primary rounded-circle"></div>
+              </a>
+            </li>
+          </ul>
+          <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
+            <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">   
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </header>
+      <!--  Header End -->
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title fw-semibold mb-4">Users</h5>
+      <div class="card mb-0">
+        <div class="card-body p-4">
+          <div class="input-group mb-3">
+          <input type="text" id="searchUserName" class="form-control" placeholder="Filter by username">
+
+            <select id="filterUserRole" class="form-select" style="max-width:160px">
+            <option value="">All Roles</option>
+            <option value="CUSTOMER">Customer</option>
+            <option value="ADMIN">Admin</option>
+            <option value="MANAGER">Manager</option>
+          </select>
+          <button id="addBtn" class="btn btn-primary">Add User</button>
+        </div>
+
+        <!-- <div class="d-flex align-items-center px-2 py-2 fw-bold bg-light" style="gap: 24px;">
+          <span style="min-width:110px;max-width:160px;">Username</span>
+          <span style="min-width:150px;max-width:220px;">Email</span>
+          <span style="min-width:90px;max-width:110px;">Role</span>
+          <span style="min-width:160px;max-width:220px;">Address</span>
+          <span style="min-width:100px;">Action</span>
+        </div> -->
+
+          <div class="list-group" id="usersList"></div>
+          <div id="usersError" class="alert alert-danger mt-3 d-none" role="alert">
+            Failed to load users.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- User Modal -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="userForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userModalLabel">Add/Edit User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="userIdField">
+        <div class="mb-2">
+          <label for="usernameField" class="form-label">Username</label>
+          <input id="usernameField" class="form-control" required maxlength="20">
+        </div>
+        <div class="mb-2">
+          <label for="emailField" class="form-label">Email</label>
+          <input id="emailField" type="email" class="form-control" required maxlength="100">
+        </div>
+        <div class="mb-2">
+          <label for="passField" class="form-label">Password</label>
+          <input id="passField" type="password" class="form-control" maxlength="255" autocomplete="new-password">
+        </div>
+        <div class="mb-2">
+          <label for="addressField" class="form-label">Address</label>
+          <input id="addressField" class="form-control" required maxlength="255">
+        </div>
+        <div class="mb-2">
+          <label for="roleField" class="form-label">Role</label>
+          <select id="roleField" class="form-select">
+            <option value="CUSTOMER">Customer</option>
+            <option value="ADMIN">Admin</option>
+            <option value="MANAGER">Manager</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" id="modalSaveBtn" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+</div>
+  </div>
+  <script src="../assets/libs/jquery/dist/jquery.min.js"></script>
+  <script src="../assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/libs/simplebar/dist/simplebar.js"></script>
+  <script src="../assets/js/sidebarmenu.js"></script>
+  <script src="../assets/js/app.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
+
+
+  <script src="../assets/js/admin-api.js"></script>
+  <!--  -->
+<script>
+let allUsers = [];
+
+async function loadUsers() {
+  try {
+    allUsers = await apiGet('/api/users');
+    renderUserList();
+  } catch (err) {
+    console.error('Failed to load users:', err);
+    alert('Failed to load users');
+  }
+}
+
+function renderUserList() {
+  const search = document.getElementById("searchUserName").value.toLowerCase();
+  const role   = document.getElementById("filterUserRole").value;
+  const usersList = document.getElementById('usersList');
+  usersList.innerHTML = '';
+
+  const headerRow = ['Username', 'Email', 'Role', 'Address', 'Actions'];
+  const header = document.createElement('div');
+  header.className = "user-table-row user-table-header";
+  header.style.display = "flex";
+  header.innerHTML = headerRow.map(head => `<div class="user-col">${head}</div>`).join('');
+  usersList.appendChild(header);
+
+  const filtered = allUsers
+    .filter(u =>
+      (u.Username.toLowerCase().includes(search) || !search) &&
+      (u.Role === role || !role)
+    );
+
+  filtered.forEach(u => {
+    const row = document.createElement('div');
+    row.className = "user-table-row";
+    row.style.display = "flex";
+    row.innerHTML = `
+      <div class="user-col">${u.Username}</div>
+      <div class="user-col">${u.Email}</div>
+      <div class="user-col">
+        <span class="badge ${u.Role === 'ADMIN' ? 'bg-primary' : 'bg-purple'}">${u.Role}</span>
+      </div>
+      <div class="user-col">${u.Address}</div>
+      <div class="user-col">
+        <button class="btn btn-sm btn-warning editBtn">Edit</button>
+        <button class="btn btn-sm btn-danger removeBtn">Remove</button>
+      </div>
+    `;
+
+    row.querySelector('.editBtn').onclick = () =>
+      showUserModal('edit', u);
+
+    row.querySelector('.removeBtn').onclick = async () => {
+      if (confirm(`Are you sure you want to remove ${u.Username}?`)) {
+        try {
+          await apiDelete(`/api/users/${u.UserID}`);
+          loadUsers();
+        } catch (err) {
+          alert('Remove failed: ' + err.message);
+        }
+      }
+    };
+
+    usersList.appendChild(row);
+  });
+}
+
+function showUserModal(mode, user = {}) {
+  document.getElementById('userIdField').value   = user.UserID   || '';
+  document.getElementById('usernameField').value = user.Username || '';
+  document.getElementById('emailField').value    = user.Email    || '';
+  document.getElementById('passField').value     = '';
+  document.getElementById('addressField').value  = user.Address  || '';
+  document.getElementById('roleField').value     = user.Role     || 'CUSTOMER';
+
+  document.getElementById('userModalLabel').textContent =
+    mode === 'add' ? 'Add User' : 'Edit User';
+
+  const modal = new bootstrap.Modal(document.getElementById('userModal'), {});
+  modal.show();
+}
+
+document.getElementById('userForm').onsubmit = async function(e) {
+  e.preventDefault();
+  const id       = document.getElementById('userIdField').value;
+  const Username = document.getElementById('usernameField').value.trim();
+  const Email    = document.getElementById('emailField').value.trim();
+  const Password = document.getElementById('passField').value;
+  const Address  = document.getElementById('addressField').value.trim();
+  const Role     = document.getElementById('roleField').value;
+
+  const payload = { Username, Email, Address, Role };
+  if (Password) payload.Password = Password;
+
+  try {
+    if (id) {
+      await apiPut(`/api/users/${id}`, payload);
+    } else {
+      await apiPost('/api/users', payload);
+    }
+    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+    loadUsers();
+  } catch (err) {
+    alert('Save failed: ' + err.message);
+  }
+};
+
+document.getElementById('addBtn').onclick = () => showUserModal('add');
+
+document.getElementById("searchUserName").oninput =
+document.getElementById("filterUserRole").onchange = renderUserList;
+
+window.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+
+
+
+</body>
+
+</html>
