@@ -13,13 +13,14 @@ const config = {
 };
 
 const pool = mysql.createPool(config);
-// Promise-wrapped pool
+
+
 const promisePool = pool.promise();
 
 
 async function connectDB() {
   try {
-    // simple sanity check
+
     const [rows] = await promisePool.query('SELECT 1');
     console.log('✅ Connected to MySQL.');
     return rows;
