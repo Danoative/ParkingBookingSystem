@@ -6,14 +6,13 @@ const session = require('express-session');
 const path = require('path');
 const srcDir = path.join(__dirname,  '..', 'src');
 
-const { pool, connectDB } = require('./db'); // keep your existing db.js
+const { pool, connectDB } = require('./db');
 
 const app = express();
 
-// ====== CORE MIDDLEWARE ======
+//  CORE MIDDLEWARE 
 app.use(express.json());
 
-// CORS for frontend at http://localhost:8080
 app.use(cors({
   origin: 'http://localhost:8080',
   credentials: true
