@@ -22,12 +22,6 @@
 
 
 <!-- PROJECT LOGO -->
-<br />
-<div align="center">
-  <a href="https://github.com/Danoative/ParkingBookingSystem">
-    <img src="/src/images/sample/sample.png" alt="Logo" width="80" height="80">
-  </a>
-
 <h3 align="center">Booking Parking System</h3>
 
   <p align="center">
