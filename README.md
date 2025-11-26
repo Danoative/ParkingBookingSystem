@@ -199,13 +199,8 @@ Distributed under the GPL-3.0. See `LICENSE` for more information.
 Project Link: [https://github.com/Danoative/ParkingBookingSystem](https://github.com/Danoative/ParkingBookingSystem)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-m/)
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[product-screenshot]: src/images/sample/sample.png
+## Reference
+SeoDash Admin Dashboard: https://themewagon.com/themes/seodash/
+Booking Template: https://colorlib.com/wp/template/colorlib-booking-4/
