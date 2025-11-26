@@ -18,11 +18,6 @@
 *** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![License][license-shield]][license-url]
 
 
 
@@ -30,7 +25,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/Danoative/ParkingBookingSystem">
-    <img src="/General/assets/css/imgGenUi/logo.png" alt="Logo" width="80" height="80">
+    <img src="/src/images/sample/sample.png" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">Booking Parking System</h3>
@@ -220,13 +215,4 @@ m/)
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-url]: https://github.com/Danoative/ParkingBookingSystem/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Danoative/ParkingBookingSystem.svg?style=for-the-badge
-[forks-url]: https://github.com/Danoative/ParkingBookingSystem/network/members
-[stars-shield]: https://img.shields.io/github/stars/Danoative/ParkingBookingSystem.svg?style=for-the-badge
-[stars-url]: https://github.com/Danoative/ParkingBookingSystem/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Danoative/ParkingBookingSystem.svg?style=for-the-badge
-[issues-url]: https://github.com/Danoative/ParkingBookingSystem/issues
-[license-shield]: https://img.shields.io/github/license/Danoative/ParkingBookingSystem.svg?style=for-the-badge
-[license-url]: https://github.com/Danoative/ParkingBookingSystem/blob/master/LICENSE
 [product-screenshot]: src/images/sample/sample.png
