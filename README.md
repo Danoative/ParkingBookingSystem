@@ -66,7 +66,6 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
 A Parking Booking System allows users to register, log in, and manage profiles with different access levels (customer, administrator). Customers can search for available parking slots, select a suitable location, reserve a space for a specific time period, and complete payments either online or offline. 
 
