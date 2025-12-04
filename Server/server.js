@@ -82,8 +82,20 @@ app.get('/', requireLogin, (req, res) => {
   res.status(403).json({ message: 'Unknown role' });
 });
 
-// ================= AUTH ROUTES =================
+// ================= AUTH ROUTES ================
 
+app.get('/auth/me', (req, res) => {
+  if (!req.session.userId) {
+    return res.json({ loggedIn: false });
+  }
+
+  return res.json({
+    loggedIn: true,
+    userId:   req.session.userId,
+    role:     req.session.role || null,
+    username: req.session.username || null
+  });
+});
 // Admin register: always ADMIN, then redirect back to login with message
 app.post('/register', async (req, res) => {
   console.log('REGISTER body:', req.body);
@@ -255,6 +267,7 @@ app.post('/customer/register', async (req, res) => {
   }
 });
 
+
 // Customer login
 app.post('/customer/login', async (req, res) => {
   const { email, password } = req.body;
@@ -264,7 +277,6 @@ app.post('/customer/login', async (req, res) => {
   }
 
   try {
-    // Only allow CUSTOMER here
     const [rows] = await pool.query(
       'SELECT UserID, Username, PasswordHash, Role FROM Users WHERE Email = ?',
       [email]
@@ -283,7 +295,6 @@ app.post('/customer/login', async (req, res) => {
       return res.status(400).send('Invalid email or password');
     }
 
-    // Get vehicle
     const [vehRows] = await pool.query(
       'SELECT VehID, VehType, PlateNum FROM Vehicles WHERE UserID = ? LIMIT 1',
       [user.UserID]
@@ -299,9 +310,11 @@ app.post('/customer/login', async (req, res) => {
       req.session.plateNum = vehicle.PlateNum;
     }
 
+    // send username so frontend can show greeting
     return res.json({
-      success: true,
-      role: user.Role,
+      success:  true,
+      role:     user.Role,
+      username: user.Username,
       vehicle
     });
   } catch (err) {
@@ -309,7 +322,6 @@ app.post('/customer/login', async (req, res) => {
     return res.status(500).send('Server error');
   }
 });
-
 // ================= PROTECTED API =================
 
 app.get('/api/dashboard-stats', requireRole('ADMIN'), async (req, res) => {
