@@ -4,13 +4,13 @@ const cors = require('cors');
 const session = require('express-session');
 
 const path = require('path');
-const srcDir = path.join(__dirname,  '..', 'src');
+const srcDir = path.join(__dirname, '..', 'src');
 
 const { pool, connectDB } = require('./db');
 
 const app = express();
 
-//  CORE MIDDLEWARE 
+// CORE MIDDLEWARE
 app.use(express.json());
 
 app.use(cors({
@@ -18,7 +18,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Session 
+// Session
 app.use(session({
   secret: 'your_super_secret_key',
   resave: false,
@@ -83,19 +83,18 @@ app.get('/', requireLogin, (req, res) => {
 });
 
 // ================= AUTH ROUTES ================
-
 app.get('/auth/me', (req, res) => {
   if (!req.session.userId) {
     return res.json({ loggedIn: false });
   }
-
   return res.json({
     loggedIn: true,
-    userId:   req.session.userId,
-    role:     req.session.role || null,
+    userId: req.session.userId,
+    role: req.session.role || null,
     username: req.session.username || null
   });
 });
+
 // Admin register: always ADMIN, then redirect back to login with message
 app.post('/register', async (req, res) => {
   console.log('REGISTER body:', req.body);
@@ -140,17 +139,15 @@ app.post('/register', async (req, res) => {
     // 5) Create session
     req.session.userId = newUserId;
     req.session.role = role;
+    req.session.username = username;
 
     // 6) Redirect back to admin login with success message
-    // If you are using redirects (not JSON) with fetch, you can simply send text instead:
-    // res.send('OK');
-res.json({
-  success: true,
-  redirect: '../AdminDash/authentication-login.html?msg=registered_admin_success'
-});
+    res.json({
+      success: true,
+      redirect: '../AdminDash/authentication-login.html?msg=registered_admin_success'
+    });
   } catch (err) {
     console.error('Register error:', err);
-    // Send the message so you can see actual DB error in browser too
     return res.status(500).send(err.message || 'Server error');
   }
 });
@@ -165,7 +162,7 @@ app.post('/login', async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      'SELECT UserID, PasswordHash, Role FROM Users WHERE Email = ?',
+      'SELECT UserID, Username, PasswordHash, Role FROM Users WHERE Email = ?',
       [email]
     );
 
@@ -180,14 +177,16 @@ app.post('/login', async (req, res) => {
     }
 
     // set session
-    req.session.userId = user.UserID;
-    req.session.role = user.Role;
+    req.session.userId   = user.UserID;
+    req.session.role     = user.Role;
+    req.session.username = user.Username;
 
     // redirect by role
     if (user.Role === 'ADMIN') {
       return res.json({
         success: true,
         role: 'ADMIN',
+        username: user.Username,
         redirect: 'http://localhost:8080/src/AdminDash/index.html'
       });
     }
@@ -195,6 +194,7 @@ app.post('/login', async (req, res) => {
       return res.json({
         success: true,
         role: 'CUSTOMER',
+        username: user.Username,
         redirect: 'http://localhost:8080/src/BookingPage/index.html'
       });
     }
@@ -203,6 +203,7 @@ app.post('/login', async (req, res) => {
     return res.json({
       success: true,
       role: user.Role,
+      username: user.Username,
       redirect: 'http://localhost:8080/'
     });
   } catch (err) {
@@ -227,7 +228,6 @@ app.post('/customer/register', async (req, res) => {
   }
 
   try {
-    // 1) Check if email exists
     const [existing] = await pool.query(
       'SELECT UserID FROM Users WHERE Email = ?',
       [email]
@@ -236,10 +236,8 @@ app.post('/customer/register', async (req, res) => {
       return res.status(400).send('Email already registered');
     }
 
-    // 2) Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // 3) Insert user as CUSTOMER
     const role = 'CUSTOMER';
     const [userResult] = await pool.query(
       `INSERT INTO Users (Username, Email, PasswordHash, Address, Role)
@@ -248,16 +246,14 @@ app.post('/customer/register', async (req, res) => {
     );
     const newUserId = userResult.insertId;
 
-    // 4) Insert vehicle
     await pool.query(
       `INSERT INTO Vehicles (UserID, VehType, PlateNum)
        VALUES (?, ?, ?)`,
       [newUserId, vehType, plateNum]
     );
 
-    // Optionally auto-login:
-    req.session.userId   = newUserId;
-    req.session.role     = role;
+    req.session.userId = newUserId;
+    req.session.role = role;
     req.session.username = username;
 
     return res.json({ success: true });
@@ -266,7 +262,6 @@ app.post('/customer/register', async (req, res) => {
     return res.status(500).send('Server error');
   }
 });
-
 
 // Customer login
 app.post('/customer/login', async (req, res) => {
@@ -301,19 +296,18 @@ app.post('/customer/login', async (req, res) => {
     );
     const vehicle = vehRows[0] || null;
 
-    req.session.userId   = user.UserID;
-    req.session.role     = user.Role;
+    req.session.userId = user.UserID;
+    req.session.role = user.Role;
     req.session.username = user.Username;
     if (vehicle) {
-      req.session.vehId    = vehicle.VehID;
-      req.session.vehType  = vehicle.VehType;
+      req.session.vehId = vehicle.VehID;
+      req.session.vehType = vehicle.VehType;
       req.session.plateNum = vehicle.PlateNum;
     }
 
-    // send username so frontend can show greeting
     return res.json({
-      success:  true,
-      role:     user.Role,
+      success: true,
+      role: user.Role,
       username: user.Username,
       vehicle
     });
@@ -322,6 +316,7 @@ app.post('/customer/login', async (req, res) => {
     return res.status(500).send('Server error');
   }
 });
+
 // ================= PROTECTED API =================
 
 app.get('/api/dashboard-stats', requireRole('ADMIN'), async (req, res) => {
@@ -367,30 +362,69 @@ app.get('/api/area/:id/slots', requireLogin, async (req, res) => {
   }
 });
 
+// Book/unbook single slot from Admin parking slot page
 app.post('/api/slot/:slotId/book', requireLogin, async (req, res) => {
-  const { vehicleId } = req.body;
+  const { vehicleId, areaId } = req.body;
+  const slotId = req.params.slotId;
+
+  const conn = await pool.getConnection();
   try {
-    await pool.query(
+    await conn.beginTransaction();
+
+    await conn.query(
       "UPDATE ParkingSlot SET CurrentVehID = ?, SlotStatus = 'not available' WHERE SlotID = ?",
-      [vehicleId, req.params.slotId]
+      [vehicleId, slotId]
     );
+
+    if (areaId) {
+      await conn.query(
+        "UPDATE ParkingAreas SET AvailableSlots = GREATEST(AvailableSlots - 1, 0) WHERE AreaID = ?",
+        [areaId]
+      );
+    }
+
+    await conn.commit();
+    conn.release();
+
     res.json({ success: true, message: "Slot booked successfully." });
   } catch (err) {
+    await conn.rollback();
+    conn.release();
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 app.post('/api/slot/:slotId/unbook', requireLogin, async (req, res) => {
+  const { areaId } = req.body;
+  const slotId = req.params.slotId;
+
+  const conn = await pool.getConnection();
   try {
-    await pool.query(
+    await conn.beginTransaction();
+
+    await conn.query(
       "UPDATE ParkingSlot SET CurrentVehID = NULL, SlotStatus = 'available' WHERE SlotID = ?",
-      [req.params.slotId]
+      [slotId]
     );
+
+    if (areaId) {
+      await conn.query(
+        "UPDATE ParkingAreas SET AvailableSlots = AvailableSlots + 1 WHERE AreaID = ?",
+        [areaId]
+      );
+    }
+
+    await conn.commit();
+    conn.release();
+
     res.json({ success: true, message: "Slot unbooked successfully." });
   } catch (err) {
+    await conn.rollback();
+    conn.release();
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // Message for Admin registration success
 app.get('/api/auth/message', (req, res) => {
   const msg = req.session.regSuccessMessage || null;
@@ -398,12 +432,9 @@ app.get('/api/auth/message', (req, res) => {
   res.json({ message: msg });
 });
 
-
-
 // ====== Booking & Payment ======
-
 app.post('/api/booking', requireLogin, async (req, res) => {
-  const UserID    = req.session.userId;
+  const UserID = req.session.userId;
   const VehicleID = req.session.vehId || null;
 
   const {
@@ -563,16 +594,16 @@ app.put('/api/bookings/:id/payment', requireRole('ADMIN'), async (req, res) => {
 // Convert '2025-11-04T21:00' to '2025-11-04 21:00:00'
 function normalizeDateTime(htmlInput) {
   if (!htmlInput) return null;
-  // Handles 'YYYY-MM-DDTHH:mm' -> 'YYYY-MM-DD HH:mm:00'
   return htmlInput.replace('T', ' ') + (htmlInput.length === 16 ? ':00' : '');
 }
+
 // Admin edits booking + payment info in one call
 app.put('/api/bookings/:id/admin-edit', requireRole('ADMIN'), async (req, res) => {
   let { EndTime, BookingStat, PayStat } = req.body;
   const BookingID = req.params.id;
 
   if (EndTime && EndTime.includes('T')) {
-    EndTime = normalizeDateTime(EndTime); // your existing helper
+    EndTime = normalizeDateTime(EndTime);
   }
 
   const conn = await pool.getConnection();
@@ -620,7 +651,8 @@ app.put('/api/bookings/:id/admin-edit', requireRole('ADMIN'), async (req, res) =
     console.error('Admin booking edit error:', err);
     res.status(400).json({ success: false, error: err.message });
   }
-})
+});
+
 // DB test endpoints
 app.get('/api/test-db', async (req, res) => {
   try {
