@@ -19,16 +19,25 @@
 
 <body>
     <div id="booking" class="section">
-        <div class="top-buttons">
-            <button class="btn btn-primary" type="button"
-                    data-bs-toggle="modal" data-bs-target="#loginModal">
-                Login
-            </button>
-            <button class="btn btn-secondary" type="button"
-                    data-bs-toggle="modal" data-bs-target="#registerModal">
-                Register
-            </button>
-            </div>
+      <div class="top-buttons d-flex justify-content-end align-items-center">
+        <span id="userGreeting" class="me-3" style="display:none;">
+          Hello, <span id="greetingName"  style="color: green; font-weight: bold;"></span>
+        </span>
+
+        <button id="loginBtn" class="btn btn-primary me-2" type="button"
+                data-bs-toggle="modal" data-bs-target="#loginModal">
+          Login
+        </button>
+
+        <button id="registerBtn" class="btn btn-secondary me-2" type="button"
+                data-bs-toggle="modal" data-bs-target="#registerModal">
+          Register
+        </button>
+
+        <button id="logoutBtn" class="btn btn-outline-danger" type="button" style="display:none;">
+          Logout
+        </button>
+      </div>
         <div class="section-center">
             <div class="container">
                 <div class="row">
@@ -242,7 +251,7 @@
         </div>
     </div>
 
-        <!-- LOGIN MODAL -->
+
         <!-- LOGIN MODAL -->
 <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -308,22 +317,32 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<div class="modal" tabindex="-1" id="paymentModal" style="display:none; position:fixed;
-top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
-  <div style="background:#fff; padding:30px; border-radius:10px; max-width:400px; margin:auto; text-align:center;">
+<div class="modal" tabindex="-1" id="paymentModal"
+     style="display:none; position:fixed;
+            top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.5); z-index:9999;
+            justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:30px; border-radius:10px;
+              max-width:400px; margin:auto; text-align:center;">
     <h4>Select Payment Method</h4>
-    <div id="modal-total-cost" style="font-weight:bold; margin-bottom:12px;">Total Cost: 0 VND</div>
-    <button class="btn btn-secondary pay-method-btn" data-method="Credit Card">Credit Card</button><br>
-    <button class="btn btn-secondary pay-method-btn" data-method="Online Banking">Online Banking</button><br>
-    <button class="btn btn-success pay-method-btn" data-method="Pay In Cash">Pay in Cash</button>
+    <div id="modal-total-cost"
+         style="font-weight:bold; margin-bottom:12px;">Total Cost: 0 VND</div>
+    <button class="btn btn-secondary pay-method-btn" data-method="Credit Card">
+      Credit Card
+    </button><br>
+    <button class="btn btn-secondary pay-method-btn" data-method="Online Banking">
+      Online Banking
+    </button><br>
+    <button class="btn btn-success pay-method-btn" data-method="Pay In Cash">
+      Pay in Cash
+    </button>
     <br>
-    <button id="cancelPaymentBtn" class="btn btn-link" style="margin-top:10px;">Cancel</button>
+    <button id="cancelPaymentBtn" class="btn btn-link" style="margin-top:10px;">
+      Cancel
+    </button>
   </div>
 </div>
 
-  <script src="../BookingPage/bookingAuth.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -334,7 +353,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const modalTotalCost   = document.getElementById('modal-total-cost');
   const form             = document.getElementById('booking-form');
 
-  // Helper: Proper datetime
+  /* ---------------- FORMATTER FOR VND ---------------- */
+  function formatVND(amount) {
+    return amount.toLocaleString('vi-VN') + " VND";
+  }
+
+  /* ---------------- BUILD DATETIME ---------------- */
   function buildDateTime(dateStr, hourStr, minStr, ampm) {
     let hour = parseInt(hourStr, 10);
     if (ampm === 'PM' && hour < 12) hour += 12;
@@ -344,6 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return `${dateStr} ${hourOut}:${minOut}:00`;
   }
 
+  /* ---------------- COST CALCULATION ---------------- */
   function calcTotalCost() {
     const startDT = buildDateTime(
       form.elements['startDate']?.value,
@@ -365,21 +390,26 @@ document.addEventListener('DOMContentLoaded', function() {
     return hours * 5000; // 5k VND per hour
   }
 
+  /* ---------------- UPDATE COST DISPLAY ---------------- */
   function updateTotalCostDisplay() {
-    totalCostDisplay.value = calcTotalCost();
+    const rawCost = calcTotalCost();             // numeric clean cost
+    totalCostDisplay.rawValue = rawCost;         // store raw value for backend
+    totalCostDisplay.value    = formatVND(rawCost); // show formatted VND
   }
 
-  // Recalculate when time/date changes
+  // Trigger recalculation when inputs change
   ['startDate','startHour','startMin','start_ampm',
    'endDate','endHour','endMin','end_ampm'].forEach(name => {
     const el = form.elements[name];
     if (el) el.addEventListener('change', updateTotalCostDisplay);
   });
-  updateTotalCostDisplay();
 
+  updateTotalCostDisplay(); // initial calculation
+
+  /* ---------------- PAYLOAD BUILDER ---------------- */
   function buildPayload() {
     return {
-      AreaID: 1, // or from a select if you add one
+      AreaID: 1,
       SlotID: Number(form.elements['slotId']?.value ?? 0),
       FirstName:   (form.elements['FirstName']?.value   || '').trim(),
       LastName:    (form.elements['LastName']?.value    || '').trim(),
@@ -388,69 +418,73 @@ document.addEventListener('DOMContentLoaded', function() {
       UserAddress: (form.elements['UserAddress']?.value || '').trim(),
       StartTime: buildDateTime(
         form.elements['startDate']?.value,
-        form.elements['startHour']?.value || '0',
-        form.elements['startMin']?.value  || '00',
+        form.elements['startHour']?.value,
+        form.elements['startMin']?.value,
         form.elements['start_ampm']?.value
       ),
       EndTime: buildDateTime(
         form.elements['endDate']?.value,
-        form.elements['endHour']?.value || '0',
-        form.elements['endMin']?.value  || '00',
+        form.elements['endHour']?.value,
+        form.elements['endMin']?.value,
         form.elements['end_ampm']?.value
       ),
-      TotalCost: Number(totalCostDisplay.value),
-      PayMethod: '' // filled when user picks payment method
+
+      /* IMPORTANT: send RAW number, not formatted text */
+      TotalCost: totalCostDisplay.rawValue,
+
+      PayMethod: ''
     };
   }
 
+  /* ---------------- PAYLOAD VALIDATION ---------------- */
   function validatePayload(p) {
-    const required = [
+    const req = [
       'AreaID','SlotID','FirstName','LastName','Email',
       'Phone','UserAddress','StartTime','EndTime','TotalCost'
     ];
-    for (const key of required) {
+
+    for (const key of req) {
       if (p[key] == null || p[key] === '' || Number.isNaN(p[key])) {
-        return { ok: false, message: `Missing or invalid field: ${key}` };
+        return { ok: false, message: `Missing or invalid: ${key}` };
       }
     }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.Email)) {
-      return { ok: false, message: 'Invalid email format' };
+      return { ok: false, message: 'Invalid email' };
     }
+
     const start = new Date(p.StartTime), end = new Date(p.EndTime);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return { ok: false, message: 'StartTime or EndTime invalid' };
-    }
-    if (end <= start) {
-      return { ok: false, message: 'EndTime must be after StartTime' };
-    }
+    if (end <= start) return { ok: false, message: 'End must be after start' };
+
     if (p.TotalCost < 5000) {
       return { ok: false, message: 'Total cost too low' };
     }
-    if (p.AreaID <= 0 || p.SlotID <= 0) {
-      return { ok: false, message: 'AreaID and SlotID must be positive' };
-    }
+
     return { ok: true };
   }
 
-  // Show payment modal
+  /* ---------------- SUBMIT HANDLER → SHOW PAYMENT MODAL ---------------- */
   form.addEventListener('submit', function(e) {
     e.preventDefault();
     bookingPayload = buildPayload();
+
     const valid = validatePayload(bookingPayload);
     if (!valid.ok) {
       alert(valid.message);
       return;
     }
-    modalTotalCost.textContent = "Total Cost: " + bookingPayload.TotalCost + " VND";
+
+    modalTotalCost.textContent = "Total Cost: " + formatVND(bookingPayload.TotalCost);
     paymentModal.style.display = 'flex';
   });
 
-  // Payment method + API call
+  /* ---------------- PAYMENT SELECT + API CALL ---------------- */
   document.querySelectorAll('.pay-method-btn').forEach(button => {
     button.addEventListener('click', async function() {
       const selectedMethod = this.getAttribute('data-method');
       bookingPayload.PayMethod = selectedMethod;
-      payMethodInput.value     = selectedMethod;
+      payMethodInput.value = selectedMethod;
+
       paymentModal.style.display = 'none';
 
       try {
@@ -462,23 +496,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const text = await res.text();
-        console.log('Booking response raw:', text);
-        let result;
-        try {
-          result = JSON.parse(text);
-        } catch {
-          alert('Server responded with non-JSON:\n' + text);
-          return;
-        }
+        let result = {};
+        try { result = JSON.parse(text); } catch {}
 
         if (!res.ok || !result.success) {
-          alert('Booking failed: ' + (result.error || `status ${res.status}`));
+          alert("Booking failed: " + (result.error || text));
           return;
         }
 
-        alert('Booking created: ' + (result.message || 'OK'));
+        alert("Booking successful!");
         form.reset();
         updateTotalCostDisplay();
+
       } catch (err) {
         alert('Network error: ' + err.message);
       }
@@ -490,6 +519,10 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 });
 </script>
+
+
+  <script src="../BookingPage/bookingAuth.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
