@@ -105,10 +105,6 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link nav-icon-hover" href="javascript:void(0)">
-              <i class="ti ti-bell-ringing"></i>
-              <div class="notification bg-primary rounded-circle"></div>
-            </a>
           </li>
         </ul>
         <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
@@ -163,23 +159,32 @@ async function loadAreaAndSlots() {
   areaName.textContent = area.ParkName;
   areaLocation.textContent = 'Location: ' + area.ParkingLocation;
   areaTotal.textContent = area.TotalSlots;
-  areaAvailable.textContent = area.AvailableSlots;
   areaPrice.textContent = area.PricePerHour + ' VND';
 
   // Get slots info
   const slots = await apiGet('/api/area/1/slots');
 
+  // Dynamically calculate available slots
+  const availableCount = slots.filter(s => s.SlotStatus === 'available').length;
+  areaAvailable.textContent = availableCount;
+
   slotsGrid.innerHTML = '';
   slots.forEach(slot => {
     const clone = slotTemplate.content.cloneNode(true);
-    // Show "Slot #X" by SlotID, and the slot location
-    clone.querySelector('.slot-label').textContent = 'Slot #' + slot.SlotID;
-    clone.querySelector('.slot-location').textContent = slot.SlotLocation || '(Unspecified)';
-    clone.querySelector('.slot-status').textContent = slot.SlotStatus === 'available' ? 'Available' : 'Occupied';
-    clone.querySelector('.slot-status').classList.add(slot.SlotStatus === 'available' ? 'bg-success' : 'bg-danger');
+
+    clone.querySelector('.slot-label').textContent =
+      'Slot #' + slot.SlotID;
+
+    clone.querySelector('.slot-location').textContent =
+      slot.SlotLocation || '(Unspecified)';
+
+    const statusEl = clone.querySelector('.slot-status');
+    statusEl.textContent = slot.SlotStatus === 'available' ? 'Available' : 'Occupied';
+    statusEl.classList.add(
+      slot.SlotStatus === 'available' ? 'bg-success' : 'bg-danger'
+    );
+
     slotsGrid.appendChild(clone);
-    
-    
   });
 }
 

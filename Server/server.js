@@ -515,17 +515,32 @@ app.get('/api/users', requireRole('ADMIN'), async (req, res) => {
 });
 
 app.post('/api/users', requireRole('ADMIN'), async (req, res) => {
-  const { Username, Email, Password, Address, Role } = req.body;
+  const { Username, Email, Password, Address, Role, Vehicle } = req.body;
+
   const hash = await bcrypt.hash(Password, 10);
-  await pool.query(
+
+  // Insert user
+  const [result] = await pool.query(
     'INSERT INTO Users (Username, Email, PasswordHash, Address, Role) VALUES (?, ?, ?, ?, ?)',
     [Username, Email, hash, Address, Role]
   );
+
+  const userId = result.insertId;
+
+  // If user is a CUSTOMER → Insert vehicle
+  if (Role === 'CUSTOMER' && Vehicle?.VehType) {
+    await pool.query(
+      'INSERT INTO Vehicles (UserID, VehType) VALUES (?, ?)',
+      [userId, Vehicle.VehType]
+    );
+  }
+
   res.status(201).json({ success: true });
 });
 
 app.put('/api/users/:id', requireRole('ADMIN'), async (req, res) => {
   const { Username, Email, Address, Role, Password } = req.body;
+  const { Vehicle } = req.body;
   let query = 'UPDATE Users SET Username=?, Email=?, Address=?, Role=?';
   let params = [Username, Email, Address, Role, req.params.id];
   if (Password) {
@@ -535,6 +550,12 @@ app.put('/api/users/:id', requireRole('ADMIN'), async (req, res) => {
   } else {
     query += ' WHERE UserID=?';
   }
+  if (Role === 'CUSTOMER' && Vehicle?.VehType) {
+  await pool.query(
+    'UPDATE Vehicles SET VehType=? WHERE UserID=?',
+    [Vehicle.VehType, req.params.id]
+  );
+}
   await pool.query(query, params);
   res.json({ success: true });
 });
@@ -608,19 +629,25 @@ app.put('/api/bookings/:id/admin-edit', requireRole('ADMIN'), async (req, res) =
 
   const conn = await pool.getConnection();
   try {
+    // Get booking info
     const [[bookingRow]] = await conn.query(
-      "SELECT StartTime FROM Booking WHERE BookingID=?",
+      "SELECT StartTime, SlotID, VehicleID FROM Booking WHERE BookingID=?",
       [BookingID]
     );
     if (!bookingRow) throw new Error("Booking not found.");
 
-    if (new Date(EndTime) <= new Date(bookingRow.StartTime)) {
+    const { SlotID, VehicleID } = bookingRow;
+
+    // Validate time
+    if (EndTime && new Date(EndTime) <= new Date(bookingRow.StartTime)) {
       throw new Error("EndTime must be after StartTime!");
     }
 
     await conn.beginTransaction();
+
+    // Update booking + payment status
     await conn.query(
-      `UPDATE Booking SET EndTime = ?, BookingStat = ? WHERE BookingID = ?`,
+      `UPDATE Booking SET EndTime=?, BookingStat=? WHERE BookingID=?`,
       [EndTime, BookingStat, BookingID]
     );
     await conn.query(
@@ -628,27 +655,48 @@ app.put('/api/bookings/:id/admin-edit', requireRole('ADMIN'), async (req, res) =
       [PayStat, BookingID]
     );
 
-    if (PayStat === 'Paid') {
-      const [rows] = await conn.query(
-        'SELECT SlotID, VehicleID FROM Booking WHERE BookingID=?',
-        [BookingID]
+    // =============================
+    // SLOT STATUS AUTO UPDATE LOGIC
+    // =============================
+
+    // 1. Booking CANCELLED → free slot
+    if (BookingStat === "CANCELLED") {
+      await conn.query(
+        `UPDATE ParkingSlot 
+         SET SlotStatus='available', CurrentVehID=NULL 
+         WHERE SlotID=?`,
+        [SlotID]
       );
-      if (rows.length) {
-        const { SlotID, VehicleID } = rows[0];
-        await conn.query(
-          "UPDATE ParkingSlot SET SlotStatus='not available', CurrentVehID=? WHERE SlotID=?",
-          [VehicleID || 1, SlotID]
-        );
-      }
+    }
+
+    // 2. Booking CONFIRMED or ACTIVE → occupy slot
+    if (BookingStat === "CONFIRMED" || BookingStat === "ACTIVE") {
+      await conn.query(
+        `UPDATE ParkingSlot 
+         SET SlotStatus='not available', CurrentVehID=? 
+         WHERE SlotID=?`,
+        [VehicleID || null, SlotID]
+      );
+    }
+
+    // 3. If payment marked PAID, also force slot to unavailable
+    if (PayStat === "Paid") {
+      await conn.query(
+        `UPDATE ParkingSlot 
+         SET SlotStatus='not available', CurrentVehID=? 
+         WHERE SlotID=?`,
+        [VehicleID || null, SlotID]
+      );
     }
 
     await conn.commit();
     conn.release();
+
     res.json({ success: true });
   } catch (err) {
     await conn.rollback();
     conn.release();
-    console.error('Admin booking edit error:', err);
+    console.error("Admin booking edit error:", err);
     res.status(400).json({ success: false, error: err.message });
   }
 });
