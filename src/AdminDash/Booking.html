@@ -229,10 +229,22 @@ document.addEventListener("DOMContentLoaded", function() {
           <td>
             <span class="badge ${paymentColor(b.PayStat)}">${b.PayStat}</span>
           </td>
-          <td>
-            <button class="btn btn-info btn-sm" onclick="showBookingDetails(${b.BookingID})">Details</button>
-            <button class="btn btn-warning btn-sm" onclick="editBooking(${b.BookingID})">Edit</button>
-          </td>
+            <td>
+              <button class="btn btn-info btn-sm"
+                      onclick="showBookingDetails(${b.BookingID})">
+                Details
+              </button>
+
+              <button class="btn btn-warning btn-sm"
+                      onclick="editBooking(${b.BookingID})">
+                Edit
+              </button>
+
+              <button class="btn btn-danger btn-sm"
+                      onclick="removeBooking(${b.BookingID})">
+                Remove
+              </button>
+            </td>
         `;
         tbody.appendChild(tr);
       });
@@ -241,7 +253,17 @@ document.addEventListener("DOMContentLoaded", function() {
       alert('Failed to load bookings');
     }
   }
+  window.removeBooking = async function (bookingId) {
+  if (!confirm("Are you sure you want to remove this booking?")) return;
 
+  try {
+    await apiDelete(`/api/bookings/${bookingId}`);
+    alert("Booking removed successfully");
+    loadBookings(); // refresh table
+  } catch (err) {
+    alert("Failed to remove booking: " + err.message);
+  }
+};
   window.statusColor = function(stat) {
     return stat === 'CONFIRMED' ? 'bg-success' :
            stat === 'CANCELLED' ? 'bg-danger'  :

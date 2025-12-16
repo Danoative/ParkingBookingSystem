@@ -16958,3 +16958,17 @@ ul {
 .timeline-widget .timeline-item .timeline-badge.badge-primary {
   border: 2px solid #2952ff;
 }
+
+.card {
+  border-radius: 10px;
+}
+.card-body {
+  padding: 1.25rem 1.4rem;
+}
+
+.app-header {
+  background: #fff;
+}
+.navbar {
+  min-height: 56px;
+}

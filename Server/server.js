@@ -60,6 +60,7 @@ app.get('/AdminDash/authentication-register.html', (req, res) => {
 // AdminDash: only ADMIN
 app.use(
   '/AdminDash',
+  requireLogin,
   requireRole('ADMIN'),
   express.static(path.join(srcDir, 'AdminDash'))
 );
@@ -154,62 +155,51 @@ app.post('/register', async (req, res) => {
 
 // Login route for both AdminDash and BookingPage
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  console.log('LOGIN BODY:', req.body);
 
+  const { email, password } = req.body;
   if (!email || !password) {
+    console.log('❌ Missing email/password');
     return res.status(400).send('Missing email or password');
   }
 
-  try {
-    const [rows] = await pool.query(
-      'SELECT UserID, Username, PasswordHash, Role FROM Users WHERE Email = ?',
-      [email]
-    );
+  const [rows] = await pool.query(
+    'SELECT UserID, Username, PasswordHash, Role FROM Users WHERE Email = ?',
+    [email]
+  );
 
-    if (rows.length === 0) {
-      return res.status(400).send('Invalid email or password');
-    }
-
-    const user = rows[0];
-    const match = await bcrypt.compare(password, user.PasswordHash);
-    if (!match) {
-      return res.status(400).send('Invalid email or password');
-    }
-
-    // set session
-    req.session.userId   = user.UserID;
-    req.session.role     = user.Role;
-    req.session.username = user.Username;
-
-    // redirect by role
-    if (user.Role === 'ADMIN') {
-      return res.json({
-        success: true,
-        role: 'ADMIN',
-        username: user.Username,
-        redirect: 'http://localhost:8080/src/AdminDash/index.html'
-      });
-    }
-    if (user.Role === 'CUSTOMER') {
-      return res.json({
-        success: true,
-        role: 'CUSTOMER',
-        username: user.Username,
-        redirect: 'http://localhost:8080/src/BookingPage/index.html'
-      });
-    }
-
-    // fallback if DB has unexpected role
-    return res.json({
-      success: true,
-      role: user.Role,
-      username: user.Username,
-      redirect: 'http://localhost:8080/'
-    });
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).send('Server error');
+  if (!rows.length) {
+    console.log('❌ Email not found:', email);
+    return res.status(400).send('Invalid email or password');
   }
+
+  const user = rows[0];
+  const match = await bcrypt.compare(password, user.PasswordHash);
+
+  if (!match) {
+    console.log('❌ Password mismatch for:', email);
+    return res.status(400).send('Invalid email or password');
+  }
+
+  // ✅ SESSION CREATED
+  req.session.userId = user.UserID;
+  req.session.role = user.Role;
+  req.session.username = user.Username;
+
+  console.log('✅ LOGIN SUCCESS:', {
+    userId: user.UserID,
+    role: user.Role,
+    sessionID: req.sessionID
+  });
+
+  res.json({
+    success: true,
+    role: user.Role,
+    username: user.Username,
+    redirect: user.Role === 'ADMIN'
+      ? '/src/AdminDash/index.html'
+      : '/src/BookingPage/index.html'
+  });
 });
 
 // Logout
@@ -565,6 +555,21 @@ app.delete('/api/users/:id', requireRole('ADMIN'), async (req, res) => {
   res.json({ success: true });
 });
 
+
+app.get('/api/me', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ loggedIn: false });
+  }
+
+  res.json({
+    loggedIn: true,
+    userId: req.session.userId,
+    username: req.session.username,
+    role: req.session.role,
+    sessionID: req.sessionID
+  });
+});
+
 // Bookings list (ADMIN dashboard)
 app.get('/api/bookings', requireRole('ADMIN'), async (req, res) => {
   const [rows] = await pool.query(`
@@ -584,6 +589,71 @@ app.get('/api/bookings/:id', requireRole('ADMIN'), async (req, res) => {
     WHERE b.BookingID = ?
   `, [req.params.id]);
   res.json(rows[0] || {});
+});
+
+app.delete('/api/bookings/:id', async (req, res) => {
+  const bookingId = req.params.id;
+  const conn = await pool.getConnection();
+
+  try {
+    await conn.beginTransaction();
+
+    // 1️⃣ Get booking info
+    const [bookingRows] = await conn.query(
+      'SELECT SlotID, AreaID FROM Booking WHERE BookingID = ?',
+      [bookingId]
+    );
+
+    if (bookingRows.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    const { SlotID, AreaID } = bookingRows[0];
+
+    // 2️⃣ Get slot status
+    const [slotRows] = await conn.query(
+      'SELECT SlotStatus FROM ParkingSlot WHERE SlotID = ?',
+      [SlotID]
+    );
+
+    const slotStatus = slotRows.length ? slotRows[0].SlotStatus : null;
+
+    // 3️⃣ Delete booking
+    await conn.query(
+      'DELETE FROM Booking WHERE BookingID = ?',
+      [bookingId]
+    );
+
+    // 4️⃣ Only free slot IF it was not available
+    if (slotStatus && slotStatus !== 'available') {
+
+      await conn.query(
+        'UPDATE ParkingSlot SET SlotStatus = "available" WHERE SlotID = ?',
+        [SlotID]
+      );
+
+      // 5️⃣ Safely increment AvailableSlots (no constraint violation)
+      await conn.query(
+        `
+        UPDATE ParkingAreas
+        SET AvailableSlots = LEAST(AvailableSlots + 1, TotalSlots)
+        WHERE AreaID = ?
+        `,
+        [AreaID]
+      );
+    }
+
+    await conn.commit();
+    res.json({ success: true, message: 'Booking removed successfully' });
+
+  } catch (err) {
+    await conn.rollback();
+    console.error('Delete booking failed:', err);
+    res.status(500).json({ error: 'Failed to remove booking' });
+  } finally {
+    conn.release();
+  }
 });
 
 app.put('/api/bookings/:id', requireRole('ADMIN'), async (req, res) => {
